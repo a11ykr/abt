@@ -1,7 +1,7 @@
 # ABT Desktop Current Tasks
 
 ## 📋 진행 중인 작업
-- [in_progress] KWCAG 2.2 지침 7.3.2 (레이블 제공) 알고리즘 설계 초안 작성 완료 (@2026-02-21)
+- [in_progress] KWCAG 2.2 지침 7.3.3 (접근 가능한 인증) 알고리즘 설계 초안 작성 (@2026-02-21)
 - [ ] 데이터 영속성 레이어 설계 (Zustand + Persistence)
 
 ## ⏳ 대기 중인 작업 (Backlog)
