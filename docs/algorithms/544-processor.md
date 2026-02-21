@@ -1,4 +1,4 @@
-# ABT-1.3.5-Processor: 콘텐츠 간의 구분 알고리즘 v1.0
+# ABT-5.4.4-Processor: 콘텐츠 간의 구분 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 1.4.5 Images of Text (Level AA)**: If the technologies being used can achieve the visual presentation, text is used to convey information rather than images of text.

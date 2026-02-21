@@ -1,4 +1,4 @@
-# ABT-1.3.3-Processor: 텍스트 콘텐츠의 명도 대비 알고리즘 v1.0
+# ABT-5.4.3-Processor: 텍스트 콘텐츠의 명도 대비 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 1.4.3 Contrast (Minimum) (Level AA)**: The visual presentation of text and images of text has a contrast ratio of at least 4.5:1 (3:1 for large text).

@@ -1,4 +1,4 @@
-# ABT-3.3.1-Processor: 콘텐츠의 선형 구조 알고리즘 v1.0
+# ABT-5.3.2-Processor: 콘텐츠의 선형구조 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 1.3.2 Meaningful Sequence (Level A)**: When the sequence in which content is presented affects its meaning, a correct reading sequence can be programmatically determined.
@@ -6,7 +6,7 @@
 
 ---
 
-이 알고리즘은 **KWCAG 3.3.1(의미 있는 콘텐츠 순서)** 지침을 준수하며, 콘텐츠가 선형화(스크린 리더 등 보조공학기기 읽기 순서)되었을 때 논리적인 흐름을 유지하는지 진단한다. 특히 헤딩(Heading) 구조를 통한 정보의 계층적 선형화를 중점적으로 분석한다.
+이 알고리즘은 **KWCAG 5.3.2(의미 있는 콘텐츠 순서)** 지침을 준수하며, 콘텐츠가 선형화(스크린 리더 등 보조공학기기 읽기 순서)되었을 때 논리적인 흐름을 유지하는지 진단한다. 특히 헤딩(Heading) 구조를 통한 정보의 계층적 선형화를 중점적으로 분석한다.
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **DOM Order:** 문서 내 요소의 출현 순서 및 계층 구조.

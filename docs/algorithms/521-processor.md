@@ -1,4 +1,4 @@
-# ABT-1.2.2-Processor: 멀티미디어 대체 수단 알고리즘 v1.0
+# ABT-5.2.1-Processor: 자막 제공 (멀티미디어 대체수단) 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 1.2.1 Audio-only and Video-only (Prerecorded) (Level A)**

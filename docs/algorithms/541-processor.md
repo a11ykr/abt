@@ -1,4 +1,4 @@
-# ABT-1.3.1-Processor: 색에 무관한 콘텐츠 인식 알고리즘 v1.0
+# ABT-5.4.1-Processor: 색에 무관한 콘텐츠 인식 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 1.4.1 Use of Color (Level A)**: Color is not used as the only visual means of conveying information, indicating an action, prompting a response, or distinguishing a visual element.

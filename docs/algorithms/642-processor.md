@@ -1,4 +1,4 @@
-# ABT-2.4.2-Processor: 제목 제공 알고리즘 v1.0
+# ABT-6.4.2-Processor: 제목 제공 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 2.4.2 Page Titled (Level A)**: Web pages have titles that describe topic or purpose.
@@ -7,7 +7,7 @@
 
 ---
 
-이 알고리즘은 **KWCAG 2.4.2(제목 제공)** 지침을 준수하며, 페이지, 프레임, 콘텐츠 블록에 해당 내용을 요약한 적절한 제목이 제공되는지 진단한다. 특히 헤딩 구조를 통해 콘텐츠의 논리적 계층(선형화 연계)을 분석한다.
+이 알고리즘은 **KWCAG 6.4.2(제목 제공)** 지침을 준수하며, 페이지, 프레임, 콘텐츠 블록에 해당 내용을 요약한 적절한 제목이 제공되는지 진단한다. 특히 헤딩 구조를 통해 콘텐츠의 논리적 계층(선형화 연계)을 분석한다.
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **Page Title:** `document.title` 값 추출.

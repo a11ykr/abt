@@ -1,11 +1,11 @@
-# ABT-2.4.1-Processor: 반복 영역 건너뛰기 알고리즘 v1.0
+# ABT-6.4.1-Processor: 반복 영역 건너뛰기 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 2.4.1 Bypass Blocks (Level A)**: A mechanism is available to bypass blocks of content that are repeated on multiple Web pages.
 
 ---
 
-이 알고리즘은 **KWCAG 2.4.1(반복 영역 건너뛰기)** 지침을 준수하며, 페이지 상단에 반복되는 메뉴나 네비게이션을 건너뛰고 본문으로 직접 이동할 수 있는 '건너뛰기 링크(Skip Navigation)'의 유효성을 진단한다.
+이 알고리즘은 **KWCAG 6.4.1(반복 영역 건너뛰기)** 지침을 준수하며, 페이지 상단에 반복되는 메뉴나 네비게이션을 건너뛰고 본문으로 직접 이동할 수 있는 '건너뛰기 링크(Skip Navigation)'의 유효성을 진단한다.
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **Skip Links:** 페이지 최상단(DOM 순서상 앞부분)에 위치한 내부 링크(`<a>` 태그의 `href`가 `#`으로 시작).

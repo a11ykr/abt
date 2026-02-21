@@ -1,4 +1,4 @@
-# ABT-2.1.2-Processor: 초점 이동과 표시 알고리즘 v1.0
+# ABT-6.1.2-Processor: 초점 이동과 표시 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 2.4.1 Bypass Blocks (Level A)**: A mechanism is available to bypass blocks of content that are repeated on multiple Web pages.
@@ -8,7 +8,7 @@
 
 ---
 
-이 알고리즘은 **KWCAG 2.1.2(초점 이동과 표시)** 지침을 준수하며, 건너뛰기 링크의 유무와 초점 이동의 논리성, 시각적 명확성을 진단한다.
+이 알고리즘은 **KWCAG 6.1.2(초점 이동과 표시)** 지침을 준수하며, 건너뛰기 링크의 유무와 초점 이동의 논리성, 시각적 명확성을 진단한다.
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **Skip Links:** DOM 상단 1~3번째 요소 중 내부 ID로 연결되는 링크 검색.

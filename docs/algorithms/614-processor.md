@@ -1,11 +1,11 @@
-# ABT-2.1.4-Processor: 문자 단축키 알고리즘 v1.0
+# ABT-6.1.4-Processor: 문자 단축키 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 2.1.4 Character Key Shortcuts (Level A)**: If a keyboard shortcut is implemented using only printable character keys, then at least one of the following is true: (1) Turn off, (2) Remap, (3) Active only on focus.
 
 ---
 
-이 알고리즘은 **KWCAG 2.1.4(문자 단축키)** 지침을 준수하며, 특수키 조합 없는 단일 문자 단축키에 대한 제어 수단 제공 여부를 진단한다. 기계적 분석의 한계를 고려하여 **"예외 처리 존재 여부와 상관없이 감지 시 무조건 전문가 검토를 요청"**하는 것을 원칙으로 한다.
+이 알고리즘은 **KWCAG 6.1.4(문자 단축키)** 지침을 준수하며, 특수키 조합 없는 단일 문자 단축키에 대한 제어 수단 제공 여부를 진단한다. 기계적 분석의 한계를 고려하여 **"예외 처리 존재 여부와 상관없이 감지 시 무조건 전문가 검토를 요청"**하는 것을 원칙으로 한다.
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **Keyboard Listeners:** `window`, `document`, 또는 특정 컨테이너에 등록된 `keydown`, `keyup`, `keypress` 핸들러 전수 조사.

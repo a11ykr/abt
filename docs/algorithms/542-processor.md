@@ -1,4 +1,4 @@
-# ABT-1.3.4-Processor: 자동 재생 음성 제어 알고리즘 v1.0
+# ABT-5.4.2-Processor: 자동 재생 금지 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 1.4.2 Audio Control (Level A)**: If any audio on a Web page plays automatically for more than 3 seconds, a mechanism is available to pause or stop the audio, or a mechanism is available to control audio volume independently from the overall system volume level.

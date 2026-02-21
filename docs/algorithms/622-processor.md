@@ -1,11 +1,11 @@
-# ABT-2.2.2-Processor: 정지 기능 제공 알고리즘 v1.0
+# ABT-6.2.2-Processor: 정지 기능 제공 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 2.2.2 Pause, Stop, Hide (Level A)**: For moving, blinking, scrolling, or auto-updating information, there is a mechanism for the user to pause, stop, or hide it.
 
 ---
 
-이 알고리즘은 **KWCAG 2.2.2(정지 기능 제공)** 지침을 준수하며, 자동으로 변경되는 콘텐츠(슬라이드, 롤링 등)를 사용자가 제어할 수 있는지 진단한다.
+이 알고리즘은 **KWCAG 6.2.2(정지 기능 제공)** 지침을 준수하며, 자동으로 변경되는 콘텐츠(슬라이드, 롤링 등)를 사용자가 제어할 수 있는지 진단한다.
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **Moving Elements:** CSS 애니메이션(`infinite`), `setTimeout/setInterval` 기반 위치 이동 요소.

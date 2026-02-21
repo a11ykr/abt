@@ -1,11 +1,11 @@
-# ABT-2.2.1-Processor: 응답 시간 조절 알고리즘 v1.0
+# ABT-6.2.1-Processor: 응답시간 조절 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 2.2.1 Timing Adjustable (Level A)**: For each time limit that is set by the content, the user is allowed to turn off, adjust, or extend the limit.
 
 ---
 
-이 알고리즘은 **KWCAG 2.2.1(응답 시간 조절)** 지침을 준수하며, 세션 타임아웃이나 자동 새로고침 등 시간 제한이 있는 기능을 사용자가 제어할 수 있는지 진단한다.
+이 알고리즘은 **KWCAG 6.2.1(응답 시간 조절)** 지침을 준수하며, 세션 타임아웃이나 자동 새로고침 등 시간 제한이 있는 기능을 사용자가 제어할 수 있는지 진단한다.
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **Meta Refresh:** `<meta http-equiv="refresh">` 태그의 `content` 속성 분석.

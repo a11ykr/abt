@@ -1,11 +1,11 @@
-# ABT-2.1.1-Processor: 키보드 사용 보장 알고리즘 v1.0
+# ABT-6.1.1-Processor: 키보드 사용 보장 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 2.1.1 Keyboard (Level A)**: All functionality of the content is operable through a keyboard interface without requiring specific timings for individual keystrokes.
 
 ---
 
-이 알고리즘은 **KWCAG 2.1.1(키보드 사용 보장)** 지침을 준수하며, 모든 기능은 마우스 없이 키보드만으로도 사용할 수 있는지 진단한다. 특히 복잡한 위젯 및 잠재적 유령 코드에 대한 정교한 분류 체계를 가진다.
+이 알고리즘은 **KWCAG 6.1.1(키보드 사용 보장)** 지침을 준수하며, 모든 기능은 마우스 없이 키보드만으로도 사용할 수 있는지 진단한다. 특히 복잡한 위젯 및 잠재적 유령 코드에 대한 정교한 분류 체계를 가진다.
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **Interactive Triggers:** `click`, `mousedown`, `mouseup`, `mouseenter`, `mouseover` 등 마우스 전용 이벤트 리스너 등록 여부.

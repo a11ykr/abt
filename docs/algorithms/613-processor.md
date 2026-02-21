@@ -1,4 +1,4 @@
-# ABT-2.1.3-Processor: 조작 가능 알고리즘 v1.0
+# ABT-6.1.3-Processor: 조작 가능 알고리즘 v1.0
 
 ### 🔗 WCAG 2.2 Reference
 - **SC 2.5.1 Pointer Gestures (Level A)**: All functionality that uses multipoint or path-based gestures for operation can be operated with a single pointer without a path-based gesture.
@@ -7,7 +7,7 @@
 
 ---
 
-이 알고리즘은 **KWCAG 2.1.3(조작 가능)** 지침을 준수하며, 모든 컨트롤은 오조작 없이 조작할 수 있도록 충분한 크기와 간격을 확보하고 있는지, 복잡한 포인터 제스처의 대안이 있는지 진단한다.
+이 알고리즘은 **KWCAG 6.1.3(조작 가능)** 지침을 준수하며, 모든 컨트롤은 오조작 없이 조작할 수 있도록 충분한 크기와 간격을 확보하고 있는지, 복잡한 포인터 제스처의 대안이 있는지 진단한다.
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **Target Elements:** 모든 대화형 요소 (`a`, `button`, `input`, `select`, `[role="button"]` 등).
