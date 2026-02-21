@@ -1,0 +1,22 @@
+#!/bin/bash
+# Mapping script to rename and fix headers
+# Current files:
+# 111-processor.md -> 1.1.1 (대체 텍스트)
+# 121-processor.md -> 1.2.2 (멀티미디어 대체 수단 - wait, 1.2.1 is 자막, 1.2.2 is 대체수단? Let's check contents)
+# 131-processor.md -> 3.3.2 (표의 구성)
+# 132-processor.md -> 3.3.1 (콘텐츠의 선형화)
+# 133-processor.md -> 1.3.2 (감각적 특징 -> 명확한 지시사항 제공?)
+# 141-processor.md -> 1.3.1 (색상 활용 -> 색에 무관한 콘텐츠 인식)
+# 142-processor.md -> 1.3.3 (명암비 -> 텍스트 콘텐츠의 명도 대비)
+# 143-processor.md -> 1.3.4 (배경음 제어 -> 자동 재생 음성 제어)
+# 144-processor.md -> 1.3.5 (콘텐츠 간의 구분)
+# 211-processor.md -> 2.1.1 (키보드 사용 보장)
+# 212-processor.md -> 2.1.2 (초점 이동과 표시)
+# 213-processor.md -> 2.1.3 (조작 가능)
+# 214-processor.md -> 2.1.4 (문자 단축키)
+# 221-processor.md -> 2.2.1 (응답 시간 조절)
+# 222-processor.md -> 2.2.2 (정지 기능 제공)
+# 231-processor.md -> 2.3.1 (깜빡임과 번쩍임 제한)
+# 241-processor.md -> 2.4.1 (반복 영역 건너뛰기)
+# 242-processor.md -> 2.4.2 (제목 제공)
+# 243-processor.md -> 2.4.3 (적절한 링크 텍스트)
