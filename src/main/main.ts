@@ -4,8 +4,10 @@ const WebSocket = require('ws');
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1440,
+    height: 900,
+    minWidth: 1024,
+    minHeight: 768,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

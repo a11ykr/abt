@@ -48,5 +48,29 @@ window.ABTUtils = {
     
     const intersection = words2.filter(word => words1.has(word));
     return intersection.length / Math.max(words1.size, 1);
+  },
+
+  /**
+   * RGB 색상 문자열(rgb(r,g,b))에서 상대 휘도(Luminance)를 계산합니다.
+   */
+  getLuminance: function(colorStr) {
+    const rgb = colorStr.match(/\d+/g);
+    if (!rgb || rgb.length < 3) return 0;
+    
+    const [r, g, b] = rgb.map(c => {
+      let v = parseInt(c) / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  },
+
+  /**
+   * 두 휘도 값 사이의 명도 대비를 계산합니다.
+   */
+  getContrastRatio: function(l1, l2) {
+    const brighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return (brighter + 0.05) / (darker + 0.05);
   }
 };

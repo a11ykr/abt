@@ -44,8 +44,6 @@ window.ABTConnector = new ABTConnector();
 
 // 엔진의 scan 결과를 자동으로 전송하는 래퍼 함수 (브라우저 콘솔에서 실행 가능)
 window.ABTQuickScan = async () => {
-  if (!window.ABT111Processor) return console.error('ABT-111-Processor not found');
-  const reports = await window.ABT111Processor.scan();
-  reports.forEach(report => window.ABTConnector.send(report));
-  console.log(`Sent ${reports.length} reports to ABT Desktop`);
+  if (!window.ABTCore) return console.error('ABTCore not found');
+  window.ABTCore.runFullAudit();
 };

@@ -8,7 +8,13 @@
     "dev:renderer": "vite",
     "dev:main": "tsc -w -p tsconfig.json",
     "dev:electron": "NODE_ENV=development electron .",
-    "build": "vite build && tsc -p tsconfig.main.json && electron-builder"
+    "build": "vite build && tsc -p tsconfig.json && electron-builder"
+  },
+  "build": {
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ]
   },
   "dependencies": {
     "lucide-react": "^0.284.0",

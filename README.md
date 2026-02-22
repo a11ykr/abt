@@ -17,7 +17,7 @@ ABT(A11Y Browser Tester)는 웹 접근성 전문가를 위한 데스크탑 진�
 ## 기술 스택
 - **Framework**: Electron, React
 - **Build Tool**: Vite, TypeScript
-- **Styling**: SCSS (Module), Tailwind CSS
+- **Styling**: SCSS (Module)
 - **Icons**: Lucide React
 - **State Management**: Zustand (계획됨), React Hooks
 

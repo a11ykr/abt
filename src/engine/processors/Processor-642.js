@@ -1,6 +1,6 @@
-class Processor242 {
+class Processor642 {
   constructor() {
-    this.id = "2.4.2";
+    this.id = "642";
     this.utils = window.ABTUtils;
     this.meaninglessTitles = [
       'untitled', 'document', '새 탭', 'home', 'main', 'index', 'index.html',
@@ -85,5 +85,5 @@ class Processor242 {
 }
 
 if (window.ABTCore) {
-  window.ABTCore.registerProcessor("2.4.2", new Processor242());
+  window.ABTCore.registerProcessor("642", new Processor642());
 }

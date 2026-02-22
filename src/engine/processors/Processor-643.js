@@ -1,6 +1,6 @@
-class Processor243 {
+class Processor643 {
   constructor() {
-    this.id = "2.4.3";
+    this.id = "643";
     this.utils = window.ABTUtils;
     this.vagueWords = ['여기', '클릭', '더 보기', '자세히', 'go', 'link', 'more', 'click', 'here'];
   }
@@ -54,5 +54,5 @@ class Processor243 {
 }
 
 if (window.ABTCore) {
-  window.ABTCore.registerProcessor("2.4.3", new Processor243());
+  window.ABTCore.registerProcessor("643", new Processor643());
 }
