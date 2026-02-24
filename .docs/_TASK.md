@@ -1,14 +1,27 @@
-# ABT Desktop Current Tasks
+# ABT 브라우저 확장 프로그램 전환 작업 목록
 
-## 📋 진행 중인 작업
-- [ ] 데이터 영속성 레이어 설계 (Zustand + Persistence)
-
+## 📋 진행 중인 작업 (Phase 1: 빌드 환경 및 기초 설정)
+- [ ] `src/extension/manifest.json` 작성 (Manifest V3, side_panel 권한 포함)
+- [ ] `vite.config.ts` 수정 (확장 프로그램 빌드 환경 구축)
+- [ ] `package.json` 스크립트 업데이트 (Extension 전용 dev/build)
 ## ⏳ 대기 중인 작업 (Backlog)
-- [ ] KWCAG 2.2 지침 프로세서 구현 (Processor-2.1, 2.2 등)
-- [ ] 상세 속성 패널 내 가이드라인 콘텐츠 보강
-- [ ] 빌드 및 패키징 자동화 스크립트 정교화
+### Phase 2: UI (Side Panel) 이식
+- [ ] `src/renderer`의 진입점을 확장 프로그램용으로 수정
+- [ ] 사이드 패널 전용 HTML 파일 생성 및 연동
+- [ ] Electron 전용 UI 요소 제거 및 스타일 조정
 
-## ✅ 완료된 작업
+### Phase 3: 로직 및 통신 전환
+- [ ] `ABT-Connector.js`의 WebSocket 통신을 `chrome.runtime`으로 교체
+- [ ] `useStore` (Zustand)의 영속성 계층을 `chrome.storage.local`로 변경
+- [ ] `File System Access API` 기반 리포트 저장 기능 구현
+
+### Phase 4: 마무리 및 정리
+- [ ] `src/main` (Electron Main) 코드 삭제
+- [ ] `electron`, `electron-builder` 등 의존성 제거
+- [ ] 최종 빌드 및 설치 테스트
+
+## ✅ 완료된 작업 (기존 Electron 기반 작업 이력)
+- [x] (이전 작업 기록들은 프로젝트 히스토리 보존을 위해 유지함)
 - [x] KWCAG 2.2 지침 8.2.1(웹 애플리케이션 접근성 준수) 알고리즘 설계 초안 작성 완료 (@2026-02-21)
 - [x] KWCAG 2.2 지침 8.1.1(마크업 오류 방지) 알고리즘 설계 초안 작성 완료 (@2026-02-21)
 - [x] KWCAG 2.2 지침 7.3.4(반복 입력 정보) 알고리즘 설계 초안 작성 완료 (@2026-02-21)
@@ -21,9 +34,6 @@
 - [x] KWCAG 2.2 지침 7.1.1(기본 언어 표시) 알고리즘 설계 초안 작성 완료 (@2026-02-21)
 - [x] KWCAG 2.2 지침 6.5.3(레이블과 네임)까지의 알고리즘 설계 초안 완료 (@2026-02-20)
 - [x] 프로젝트 문서 구조 정리 및 규칙 명문화 (@2026-02-20)
-  - [x] /.agent/RULES.md 생성
-  - [x] /.docs/_TASK.md 업데이트
-  - [x] /.agent/_PLAN.md를 /.docs/로 이동
 - [x] KWCAG 2.2 지침 6.4.1(반복 영역 건너뛰기)까지의 알고리즘 설계 및 구현 완료
 - [x] 프로젝트 구조 파악 및 상태 진단
 - [x] README.md 생성 및 업데이트
