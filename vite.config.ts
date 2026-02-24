@@ -5,13 +5,22 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   root: path.join(__dirname, 'src/renderer'),
-  publicDir: 'public',
   build: {
-    outDir: path.join(__dirname, 'dist/renderer'),
+    outDir: path.resolve(__dirname, 'dist'),
     emptyOutDir: true,
-  },
-  server: {
-    port: 5173,
+    rollupOptions: {
+      input: {
+        sidepanel: path.resolve(__dirname, 'src/renderer/sidepanel.html'),
+        background: path.resolve(__dirname, 'src/extension/background.js'),
+        'engine/ABT-Connector': path.resolve(__dirname, 'src/engine/ABT-Connector.js'),
+        'engine/ABT-Core': path.resolve(__dirname, 'src/engine/ABT-Core.js'),
+      },
+      output: {
+        entryFileNames: '[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]',
+      },
+    },
   },
   resolve: {
     alias: {
