@@ -64,6 +64,12 @@ export const kwcagHierarchy = [
 export interface ABTItem {
   id: string;
   guideline_id: string;
+  pageInfo?: {
+    url: string;
+    pageTitle: string;
+    timestamp: string;
+    scanId: number;
+  };
   elementInfo: {
     selector: string;
     tagName: string;
@@ -88,8 +94,10 @@ export interface ABTItem {
 interface ABTStore {
   items: ABTItem[];
   projectName: string;
+  addReport: (report: any) => void;
   setItems: (items: ABTItem[]) => void;
   updateItemStatus: (id: string, judge: string) => void;
+  removeSession: (url: string) => void;
   clearItems: () => void;
   setProjectName: (name: string) => void;
 }
@@ -99,11 +107,49 @@ export const useStore = create<ABTStore>()(
     (set) => ({
       items: [],
       projectName: 'Default Project',
+      
+      addReport: (report) => set((state) => {
+        const pageInfo = report.pageInfo;
+        let newItems = [...state.items];
+
+        if (pageInfo && pageInfo.url) {
+          // 1. 동일 페이지의 다른 scanId 데이터가 있으면 (재스캔) 해당 페이지 데이터만 삭제
+          const existingSamePage = state.items.find(i => i.pageInfo?.url === pageInfo.url);
+          if (existingSamePage && existingSamePage.pageInfo?.scanId !== pageInfo.scanId) {
+            newItems = newItems.filter(i => i.pageInfo?.url !== pageInfo.url);
+          }
+        }
+
+        const newItem: ABTItem = {
+          ...report,
+          id: Math.random().toString(36).substr(2, 9),
+          // pageInfo가 없는 경우를 대비한 기본값 (호환성)
+          pageInfo: report.pageInfo || {
+            url: "Unknown URL",
+            pageTitle: "Unknown Page",
+            timestamp: new Date().toISOString(),
+            scanId: 0
+          },
+          currentStatus: report.result?.status || "검토 필요",
+          finalComment: "",
+          history: report.history || [{
+            timestamp: new Date().toLocaleTimeString(),
+            status: report.result?.status || "탐지",
+            comment: report.result?.message || "진단 데이터 수신"
+          }]
+        };
+
+        return { items: [...newItems, newItem] };
+      }),
+
       setItems: (items) => set({ items }),
       updateItemStatus: (id, judge) => set((state) => ({
         items: state.items.map((item) => 
           item.id === id ? { ...item, judge } : item
         )
+      })),
+      removeSession: (url) => set((state) => ({
+        items: state.items.filter((item) => item.pageInfo?.url !== url)
       })),
       clearItems: () => set({ items: [] }),
       setProjectName: (projectName) => set({ projectName }),
