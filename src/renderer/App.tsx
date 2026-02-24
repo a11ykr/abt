@@ -7,6 +7,7 @@ const guidelineNames: Record<string, string> = {
   "511": "5.1.1 적절한 대체 텍스트",
   "521": "5.2.1 자막 제공",
   "611": "6.1.1 키보드 사용 보장",
+  "612": "6.1.2 초점 이동과 표시",
   "613": "6.1.3 조작 가능",
   "631": "6.3.1 번쩍임 제한",
   "641": "6.4.1 건너뛰기 링크",
@@ -15,7 +16,9 @@ const guidelineNames: Record<string, string> = {
 };
 
 const App = () => {
-  const { items, setItems, updateItemStatus, clearItems, projectName } = useStore();
+  const isElectron = !!(window as any).electronAPI;
+  const isExtension = typeof chrome !== 'undefined' && !!chrome.runtime && !!chrome.runtime.sendMessage;
+  const { items, setItems, addReport, updateItemStatus, removeSession, clearItems, projectName } = useStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [judgingId, setJudgingId] = useState<string | null>(null);
   const [tempComment, setTempComment] = useState("");
@@ -23,8 +26,39 @@ const App = () => {
   const [activeTab, setActiveTab] = useState("ALL");
   const [copyStatus, setCopyStatus] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [expandedNodes, setExpandedNodes] = useState<string[]>(['1', '2', '3', '4']);
+  const [expandedNodes, setExpandedNodes] = useState<string[]>(['5', '6', '7', '8']);
   const [isPropPanelOpen, setIsPropPanelOpen] = useState(false);
+  const [selectedSessionUrl, setSelectedSessionUrl] = useState<string | null>(null);
+
+  const sessions = useMemo(() => {
+    const map = new Map<string, any>();
+    // 최신 세션이 상단에 오도록 items를 역순으로 순회
+    [...items].reverse().forEach(item => {
+      const url = item.pageInfo?.url || "Unknown URL";
+      if (!map.has(url)) {
+        map.set(url, item.pageInfo || {
+          url: "Unknown URL",
+          pageTitle: "Unknown Page",
+          timestamp: new Date().toISOString(),
+          scanId: 0
+        });
+      }
+    });
+    const result = Array.from(map.values());
+    console.log("ABT: Detected sessions (latest first):", result);
+    return result;
+  }, [items]);
+
+  useEffect(() => {
+    if (sessions.length > 0) {
+      // 새로운 세션이 추가되거나 최신 세션이 바뀌면 자동 선택
+      // (첫 로드 시 또는 새로운 스캔 시작 시)
+      if (!selectedSessionUrl || !sessions.some(s => s.url === selectedSessionUrl)) {
+        setSelectedSessionUrl(sessions[0].url);
+      }
+    }
+  }, [sessions, selectedSessionUrl]);
+
   const toggleNode = (nodeId: string) => {
     setExpandedNodes(prev => 
       prev.includes(nodeId) ? prev.filter(id => id !== nodeId) : [...prev, nodeId]
@@ -39,28 +73,38 @@ const App = () => {
   };
 
   useEffect(() => {
-    if ((window as any).electronAPI) {
-      const cleanup = (window as any).electronAPI.onUpdateAbtList((data: any) => {
+    // 1. Electron Messaging Pattern
+    let cleanupElectron: (() => void) | undefined;
+    if (isElectron) {
+      cleanupElectron = (window as any).electronAPI.onUpdateAbtList((data: any) => {
+        console.log("ABT DEBUG: Data received via Electron:", data);
         setIsConnected(true);
-        const newItem = {
-          ...data,
-          id: Math.random().toString(36).substr(2, 9),
-          currentStatus: data.result.status,
-          finalComment: "",
-          history: [{
-            timestamp: new Date().toLocaleTimeString(),
-            status: data.result.status,
-            comment: data.result.message
-          }]
-        };
-        setItems([newItem, ...items]);
+        addReport(data);
       });
-
-      return () => {
-        if (typeof cleanup === 'function') cleanup();
-      };
     }
-  }, [items, setItems]);
+
+    // 2. Chrome Extension Messaging Pattern (Task 3 Implementation Target)
+    const extensionListener = (message: any) => {
+      if (message.type === 'UPDATE_ABT_LIST') {
+        console.log("ABT DEBUG: Data received via Extension:", message.data);
+        setIsConnected(true);
+        addReport(message.data);
+      }
+    };
+
+    if (isExtension) {
+      chrome.runtime.onMessage.addListener(extensionListener);
+      // Initial connection check could go here
+      setIsConnected(true); 
+    }
+
+    return () => {
+      if (cleanupElectron) cleanupElectron();
+      if (isExtension) {
+        chrome.runtime.onMessage.removeListener(extensionListener);
+      }
+    };
+  }, [addReport, isElectron, isExtension]);
 
   const guidelineTabs = useMemo(() => {
     const ids = Array.from(new Set(items.map(i => i.guideline_id)));
@@ -69,6 +113,9 @@ const App = () => {
 
   const filteredItems = useMemo(() => {
     let result = items;
+    if (selectedSessionUrl) {
+      result = result.filter(i => i.pageInfo?.url === selectedSessionUrl);
+    }
     if (activeTab !== "ALL") {
       result = result.filter(i => i.guideline_id === activeTab);
     }
@@ -76,7 +123,12 @@ const App = () => {
       result = result.filter(i => i.currentStatus === statusFilter);
     }
     return result;
-  }, [items, activeTab, statusFilter]);
+  }, [items, selectedSessionUrl, activeTab, statusFilter]);
+
+  // 전체 통계 계산 (선택된 세션 기준)
+  const sessionItems = useMemo(() => {
+    return items.filter(i => i.pageInfo?.url === selectedSessionUrl);
+  }, [items, selectedSessionUrl]);
 
   const handleJudge = (id: string, nextStatus: string) => {
     const nextItems = items.map(item => {
@@ -139,6 +191,23 @@ const App = () => {
 
   const selectedItem = items.find(i => i.id === selectedId);
 
+
+  const handleLocate = (selector: string) => {
+    const message = {
+      type: 'locate-element',
+      selector: selector
+    };
+
+    if (isElectron) {
+      (window as any).electronAPI.sendToBrowser(message);
+    } else if (isExtension) {
+      // Extension messaging (Task 3)
+      chrome.runtime.sendMessage(message);
+    } else {
+      console.log("ABT: Locate element requested (No API):", selector);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <aside className={styles.sidebar} aria-label="프로젝트 내비게이션">
@@ -157,12 +226,43 @@ const App = () => {
         <nav className={styles.navArea}>
           <h2>검수 세션</h2>
           <ul className={styles.sessionList}>
-            <li>
-              <button className={styles.sessionBtn}>
-                <div className={styles.pulse}></div>
-                2026-02-20 메인 페이지
-              </button>
-            </li>
+            {sessions.length === 0 ? (
+              <li className={styles.noSession}>No scan sessions yet</li>
+            ) : (
+              sessions.map((session, idx) => (
+                <li key={idx} className={styles.sessionItem}>
+                  <button 
+                    className={`${styles.sessionBtn} ${selectedSessionUrl === session.url ? styles.active : ''}`}
+                    onClick={() => setSelectedSessionUrl(session.url)}
+                  >
+                    <div className={styles.pulse}></div>
+                    <div className={styles.sessionInfo}>
+                      <span className={styles.sessionTitle}>
+                        {session.timestamp ? (
+                          `${new Date(session.timestamp).toLocaleDateString()} ${new Date(session.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`
+                        ) : ""} {session.pageTitle || "Untitled Page"}
+                      </span>
+                      <span className={styles.sessionUrl}>{session.url || "No URL"}</span>
+                    </div>
+                  </button>
+                  <button 
+                    className={styles.sessionDeleteBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`'${session.pageTitle}' 세션의 모든 데이터를 삭제하시겠습니까?`)) {
+                        removeSession(session.url);
+                        if (selectedSessionUrl === session.url) {
+                          setSelectedSessionUrl(null);
+                        }
+                      }
+                    }}
+                    title="세션 삭제"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </li>
+              ))
+            )}
           </ul>
 
           <div className={styles.treeMenuSection}>
@@ -173,7 +273,7 @@ const App = () => {
             
             <ul className={styles.treeList}>
               {kwcagHierarchy.map(group => {
-                const groupItemCount = items.filter(i => group.items.some(gi => gi.id === i.guideline_id)).length;
+                const groupItemCount = sessionItems.filter(i => group.items.some(gi => gi.id === i.guideline_id)).length;
                 return (
                   <li key={group.id} className={styles.treeGroup}>
                     <button 
@@ -189,7 +289,7 @@ const App = () => {
                     {expandedNodes.includes(group.id) && (
                       <ul className={styles.treeChildren}>
                         {group.items.map(item => {
-                          const count = items.filter(i => i.guideline_id === item.id).length;
+                          const count = sessionItems.filter(i => i.guideline_id === item.id).length;
                           return (
                             <li key={item.id}>
                               <button
@@ -229,30 +329,30 @@ const App = () => {
           <div className={styles.headingArea}>
             <h2>{projectName} - 검수 보드</h2>
             <ul className={styles.summaryStats}>
-              <li 
-                className={`${styles.allSummary} ${statusFilter === 'ALL' ? styles.active : ''}`}
-                onClick={() => setStatusFilter('ALL')}
-              >
-                전체 {items.length}
-              </li>
-              <li 
-                className={`${styles.failSummary} ${statusFilter === '오류' ? styles.active : ''}`}
-                onClick={() => setStatusFilter('오류')}
-              >
-                오류 {items.filter(i => i.currentStatus === '오류').length}
-              </li>
-              <li 
-                className={`${styles.warnSummary} ${statusFilter === '수정 권고' ? styles.active : ''}`}
-                onClick={() => setStatusFilter('수정 권고')}
-              >
-                수정 권고 {items.filter(i => i.currentStatus === '수정 권고').length}
-              </li>
-              <li 
-                className={`${styles.reviewSummary} ${statusFilter === '검토 필요' ? styles.active : ''}`}
-                onClick={() => setStatusFilter('검토 필요')}
-              >
-                검토 필요 {items.filter(i => i.currentStatus === '검토 필요').length}
-              </li>
+      <li 
+        className={`${styles.allSummary} ${statusFilter === 'ALL' ? styles.active : ''}`}
+        onClick={() => setStatusFilter('ALL')}
+      >
+        전체 {sessionItems.length}
+      </li>
+      <li 
+        className={`${styles.failSummary} ${statusFilter === '오류' ? styles.active : ''}`}
+        onClick={() => setStatusFilter('오류')}
+      >
+        오류 {sessionItems.filter(i => i.currentStatus === '오류').length}
+      </li>
+      <li 
+        className={`${styles.warnSummary} ${statusFilter === '수정 권고' ? styles.active : ''}`}
+        onClick={() => setStatusFilter('수정 권고')}
+      >
+        수정 권고 {sessionItems.filter(i => i.currentStatus === '수정 권고').length}
+      </li>
+      <li 
+        className={`${styles.reviewSummary} ${statusFilter === '검토 필요' ? styles.active : ''}`}
+        onClick={() => setStatusFilter('검토 필요')}
+      >
+        검토 필요 {sessionItems.filter(i => i.currentStatus === '검토 필요').length}
+      </li>
             </ul>
           </div>
           <div className={styles.topActions}>
@@ -291,7 +391,10 @@ const App = () => {
               filteredItems.map((item) => (
                 <article 
                   key={item.id} 
-                  onClick={() => setSelectedId(item.id)}
+                  onClick={() => {
+                    setSelectedId(item.id);
+                    handleLocate(item.elementInfo.selector);
+                  }}
                   className={`${styles.card} ${selectedId === item.id ? styles.selected : ''}`}
                 >
                   <div className={styles.cardHeader}>
@@ -390,6 +493,7 @@ const App = () => {
                           } else {
                             setSelectedId(item.id);
                             setIsPropPanelOpen(true);
+                            handleLocate(item.elementInfo.selector);
                           }
                         }}
                       >
