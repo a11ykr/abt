@@ -25,6 +25,17 @@ class ABTConnector {
     this.socket.onerror = () => {
       this.isConnected = false;
     };
+
+    this.socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'locate-element' && window.ABTCore) {
+          window.ABTCore.highlightElement(data.selector);
+        }
+      } catch (e) {
+        console.warn("ABT: Failed to parse message from desktop", e);
+      }
+    };
   }
 
   /**
