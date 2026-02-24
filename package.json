@@ -1,41 +1,24 @@
 {
-  "name": "abt-desktop",
+  "name": "abt-extension",
   "version": "1.0.0",
-  "description": "A11Y Browser Tester Desktop",
-  "main": "dist/main/main.js",
+  "description": "A11Y Browser Tester Chrome Extension",
   "scripts": {
-    "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\" \"npm run dev:electron\"",
-    "dev:renderer": "vite",
-    "dev:main": "tsc -w -p tsconfig.json",
-    "dev:electron": "NODE_ENV=development electron .",
-    "build": "vite build && tsc -p tsconfig.json && electron-builder",
-    "dev:ext": "vite",
-    "build:ext": "vite build && cp src/extension/manifest.json dist/"
-  },
-  "build": {
-    "files": [
-      "dist/**/*",
-      "package.json"
-    ]
+    "dev": "vite",
+    "build": "vite build && cp src/extension/manifest.json dist/"
   },
   "dependencies": {
     "lucide-react": "^0.284.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "ws": "^8.19.0",
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@types/chrome": "^0.1.37",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.0.4",
-    "concurrently": "^8.2.1",
-    "electron": "^26.2.1",
-    "electron-builder": "^26.8.1",
     "sass": "^1.97.3",
     "typescript": "^5.0.2",
-    "vite": "^4.4.9",
-    "wait-on": "^7.0.1"
+    "vite": "^4.4.9"
   }
 }
