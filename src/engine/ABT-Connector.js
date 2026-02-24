@@ -1,52 +1,38 @@
 /**
- * ABT-Connector: Browser to Desktop Bridge
+ * ABT-Connector: Browser to Extension Bridge
  */
 class ABTConnector {
-  constructor(url = 'ws://localhost:8888') {
-    this.url = url;
-    this.socket = null;
-    this.isConnected = false;
-    this.connect();
+  constructor() {
+    this.isConnected = true; // Chrome runtime is always available in content script
+    this.setupListeners();
   }
 
-  connect() {
-    this.socket = new WebSocket(this.url);
-
-    this.socket.onopen = () => {
-      this.isConnected = true;
-    };
-
-    this.socket.onclose = () => {
-      this.isConnected = false;
-      // 5초 후 재연결 시도
-      setTimeout(() => this.connect(), 5000);
-    };
-
-    this.socket.onerror = () => {
-      this.isConnected = false;
-    };
-
-    this.socket.onmessage = (event) => {
+  setupListeners() {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'locate-element' && window.ABTCore) {
-          window.ABTCore.highlightElement(data.selector);
+        if (message.type === 'locate-element' && window.ABTCore) {
+          window.ABTCore.highlightElement(message.selector);
+          sendResponse({ status: 'success' });
         }
       } catch (e) {
-        console.warn("ABT: Failed to parse message from desktop", e);
+        console.warn("ABT: Failed to handle message from extension", e);
+        sendResponse({ status: 'error', message: e.message });
       }
-    };
+      return true; // Keep channel open for async response if needed
+    });
   }
 
   /**
-   * 진단 데이터를 데스크탑 앱으로 전송합니다.
+   * 진단 데이터를 확장 프로그램(Background/Sidepanel)으로 전송합니다.
    */
   send(data) {
-    if (this.isConnected) {
-      this.socket.send(JSON.stringify(data));
+    try {
+      chrome.runtime.sendMessage(data);
       return true;
+    } catch (e) {
+      console.error("ABT: Failed to send message to extension", e);
+      return false;
     }
-    return false;
   }
 }
 
