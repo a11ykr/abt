@@ -13,6 +13,10 @@ class ABTConnector {
         if (message.type === 'locate-element' && window.ABTCore) {
           window.ABTCore.highlightElement(message.selector);
           sendResponse({ status: 'success' });
+        } else if (message.type === 'RUN_AUDIT' && window.ABTQuickScan) {
+          console.log("ABT: Audit triggered via Extension UI");
+          window.ABTQuickScan();
+          sendResponse({ status: 'started' });
         }
       } catch (e) {
         console.warn("ABT: Failed to handle message from extension", e);
@@ -27,7 +31,10 @@ class ABTConnector {
    */
   send(data) {
     try {
-      chrome.runtime.sendMessage(data);
+      chrome.runtime.sendMessage({
+        type: 'UPDATE_ABT_LIST',
+        data: data
+      });
       return true;
     } catch (e) {
       console.error("ABT: Failed to send message to extension", e);

@@ -24,9 +24,29 @@ const App = () => {
   const [activeTab, setActiveTab] = useState("ALL");
   const [copyStatus, setCopyStatus] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [expandedNodes, setExpandedNodes] = useState<string[]>(['5', '6', '7', '8']);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [isPropPanelOpen, setIsPropPanelOpen] = useState(false);
   const [selectedSessionUrl, setSelectedSessionUrl] = useState<string | null>(null);
+  const [currentTabInfo, setCurrentTabInfo] = useState<{url: string, title: string} | null>(null);
+
+  useEffect(() => {
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          setCurrentTabInfo({
+            url: tabs[0].url || "",
+            title: tabs[0].title || ""
+          });
+        }
+      });
+    }
+  }, []);
+
+  const handleStartAudit = () => {
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.sendMessage({ type: 'RUN_AUDIT' });
+    }
+  };
 
   const sessions = useMemo(() => {
     const map = new Map<string, any>();
@@ -57,11 +77,12 @@ const App = () => {
     }
   }, [sessions, selectedSessionUrl]);
 
-  const toggleNode = (nodeId: string) => {
-    setExpandedNodes(prev => 
-      prev.includes(nodeId) ? prev.filter(id => id !== nodeId) : [...prev, nodeId]
+  const toggleGroup = (gid: string) => {
+    setExpandedGroups(prev => 
+      prev.includes(gid) ? prev.filter(id => id !== gid) : [...prev, gid]
     );
   };
+
   const getGuidelineName = (id: string) => {
     for (const group of kwcagHierarchy) {
       const found = group.items.find(item => item.id === id);
@@ -71,6 +92,10 @@ const App = () => {
   };
 
   useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.runtime) return;
+
+    // Connect to background for persistent relay
+    const port = chrome.runtime.connect({ name: 'abt-sidepanel' });
     const extensionListener = (message: any) => {
       if (message.type === 'UPDATE_ABT_LIST') {
         console.log("ABT DEBUG: Data received via Extension:", message.data);
@@ -78,12 +103,12 @@ const App = () => {
         addReport(message.data);
       }
     };
-
     chrome.runtime.onMessage.addListener(extensionListener);
+    port.onMessage.addListener(extensionListener);
     setIsConnected(true); 
-
     return () => {
       chrome.runtime.onMessage.removeListener(extensionListener);
+      port.disconnect();
     };
   }, [addReport]);
 
@@ -105,6 +130,39 @@ const App = () => {
     }
     return result;
   }, [items, selectedSessionUrl, activeTab, statusFilter]);
+
+  const groupedItems = useMemo(() => {
+    const groups: Record<string, typeof filteredItems> = {};
+    filteredItems.forEach(item => {
+      if (!groups[item.guideline_id]) {
+        groups[item.guideline_id] = [];
+      }
+      groups[item.guideline_id].push(item);
+    });
+
+    return Object.keys(groups)
+      .sort((a, b) => {
+        return parseInt(a) - parseInt(b);
+      })
+      .map(gid => ({
+        gid,
+        label: getGuidelineName(gid),
+        items: groups[gid]
+      }));
+  }, [filteredItems]);
+
+  useEffect(() => {
+    const errorGids = groupedItems
+      .filter(g => g.items.some(i => i.currentStatus === '오류'))
+      .map(g => g.gid);
+    
+    if (errorGids.length > 0) {
+      setExpandedGroups(prev => {
+        const next = [...new Set([...prev, ...errorGids])];
+        return next;
+      });
+    }
+  }, [groupedItems]);
 
   // 전체 통계 계산 (선택된 세션 기준)
   const sessionItems = useMemo(() => {
@@ -210,368 +268,145 @@ const App = () => {
 
   return (
     <div className={styles.container}>
-      <aside className={styles.sidebar} aria-label="프로젝트 내비게이션">
-        <header className={styles.header}>
-          <div className={styles.brand}>
-            <div className={styles.logoBox}>
-              <Shield size={20} strokeWidth={2.5} />
-            </div>
-            <div className={styles.titleGroup}>
-              <h1>ABT Engine</h1>
-              <span>Desktop Auditor</span>
-            </div>
+      <header className={styles.extHeader}>
+        <div className={styles.brand}>
+          <Shield size={18} className={styles.logo} />
+          <div className={styles.titleInfo}>
+            <h1>ABT Auditor</h1>
+            <span>Extension</span>
           </div>
-        </header>
-        
-        <nav className={styles.navArea}>
-          <h2>검수 세션</h2>
-          <ul className={styles.sessionList}>
-            {sessions.length === 0 ? (
-              <li className={styles.noSession}>No scan sessions yet</li>
-            ) : (
-              sessions.map((session, idx) => (
-                <li key={idx} className={styles.sessionItem}>
-                  <button 
-                    className={`${styles.sessionBtn} ${selectedSessionUrl === session.url ? styles.active : ''}`}
-                    onClick={() => setSelectedSessionUrl(session.url)}
-                  >
-                    <div className={styles.pulse}></div>
-                    <div className={styles.sessionInfo}>
-                      <span className={styles.sessionTitle}>
-                        {session.timestamp ? (
-                          `${new Date(session.timestamp).toLocaleDateString()} ${new Date(session.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`
-                        ) : ""} {session.pageTitle || "Untitled Page"}
-                      </span>
-                      <span className={styles.sessionUrl}>{session.url || "No URL"}</span>
-                    </div>
-                  </button>
-                  <button 
-                    className={styles.sessionDeleteBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.confirm(`'${session.pageTitle}' 세션의 모든 데이터를 삭제하시겠습니까?`)) {
-                        removeSession(session.url);
-                        if (selectedSessionUrl === session.url) {
-                          setSelectedSessionUrl(null);
-                        }
-                      }
-                    }}
-                    title="세션 삭제"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
+        </div>
+        <div className={styles.headerActions}>
+          <button onClick={clearItems} title="전체 삭제" className={styles.iconBtn}><Trash2 size={16} /></button>
+          <button onClick={generateMarkdownReport} title="리포트 추출" className={`${styles.iconBtn} ${copyStatus ? styles.success : ''}`}><FileText size={16} /></button>
+        </div>
+      </header>
 
-          <div className={styles.treeMenuSection}>
-            <div className={styles.treeHeader}>
-              <h2>KWCAG 2.2 지침</h2>
-              <button onClick={() => setActiveTab("ALL")} className={`${styles.allBtn} ${activeTab === "ALL" ? styles.active : ""}`}>전체</button>
-            </div>
-            
-            <ul className={styles.treeList}>
-              {kwcagHierarchy.map(group => {
-                const groupItemCount = sessionItems.filter(i => group.items.some(gi => gi.id === i.guideline_id)).length;
-                return (
-                  <li key={group.id} className={styles.treeGroup}>
-                    <button 
-                      className={styles.treeGroupBtn} 
-                      onClick={() => toggleNode(group.id)}
-                    >
-                      {expandedNodes.includes(group.id) ? <FolderOpen size={14} className={styles.treeIcon} /> : <Folder size={14} className={styles.treeIcon} />}
-                      <span className={styles.groupTitle}>{group.title}</span>
-                      <span className={styles.groupCount}>{groupItemCount > 0 && groupItemCount}</span>
-                      {expandedNodes.includes(group.id) ? <ChevronDown size={14} className={styles.chevron} /> : <ChevronRight size={14} className={styles.chevron} />}
-                    </button>
-                    
-                    {expandedNodes.includes(group.id) && (
-                      <ul className={styles.treeChildren}>
-                        {group.items.map(item => {
-                          const count = sessionItems.filter(i => i.guideline_id === item.id).length;
-                          return (
-                            <li key={item.id}>
-                              <button
-                                className={`${styles.treeItemBtn} ${activeTab === item.id ? styles.active : ''}`}
-                                onClick={() => setActiveTab(item.id)}
-                              >
-                                <FileCode2 size={12} className={styles.itemIcon} />
-                                <span className={styles.itemId}>{item.id}</span>
-                                <span className={styles.itemLabel} title={item.label}>{item.label}</span>
-                                {count > 0 && <span className={styles.itemCount}>{count}</span>}
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </nav>
-
-        <footer className={styles.sidebarFooter}>
-          <div className={styles.connStatus}>
-            <span>Browser Connection</span>
-            <div className={`${styles.badge} ${isConnected ? styles.connected : styles.waiting}`}>
-              <div className={styles.dot}></div>
-              {isConnected ? 'On' : 'Off'}
-            </div>
-          </div>
-        </footer>
-      </aside>
-
-      <main className={styles.mainBoard}>
-        <header className={styles.topHeader}>
-          <div className={styles.headingArea}>
-            <h2>{projectName} - 검수 보드</h2>
-            <ul className={styles.summaryStats}>
-      <li 
-        className={`${styles.allSummary} ${statusFilter === 'ALL' ? styles.active : ''}`}
-        onClick={() => setStatusFilter('ALL')}
-      >
-        전체 {sessionItems.length}
-      </li>
-      <li 
-        className={`${styles.failSummary} ${statusFilter === '오류' ? styles.active : ''}`}
-        onClick={() => setStatusFilter('오류')}
-      >
-        오류 {sessionItems.filter(i => i.currentStatus === '오류').length}
-      </li>
-      <li 
-        className={`${styles.warnSummary} ${statusFilter === '수정 권고' ? styles.active : ''}`}
-        onClick={() => setStatusFilter('수정 권고')}
-      >
-        수정 권고 {sessionItems.filter(i => i.currentStatus === '수정 권고').length}
-      </li>
-      <li 
-        className={`${styles.reviewSummary} ${statusFilter === '검토 필요' ? styles.active : ''}`}
-        onClick={() => setStatusFilter('검토 필요')}
-      >
-        검토 필요 {sessionItems.filter(i => i.currentStatus === '검토 필요').length}
-      </li>
-            </ul>
-          </div>
-          <div className={styles.topActions}>
-            <button 
-              onClick={() => {
-                if(window.confirm('정말 모든 검수 데이터를 초기화하시겠습니까?')) {
-                  clearItems();
-                }
-              }}
-              className={styles.clearBtn}
-              title="검수 데이터 전체 삭제"
-            >
-              <Trash2 size={16} />
-              <span className={styles.btnText}>전체 삭제</span>
-            </button>
-            <button 
-              onClick={generateMarkdownReport}
-              className={`${styles.reportBtn} ${copyStatus ? styles.copied : styles.ready}`}
-            >
-              {copyStatus ? <CheckCircle2 size={18} /> : <FileText size={18} />}
-              {copyStatus ? "리포트 복사됨!" : "리포트 추출 (Jira용)"}
-            </button>
-          </div>
-        </header>
-
-
-
-        <div className={styles.boardBody}>
-          <section className={`${styles.contentArea} ${styles.customScrollbar}`}>
-            {filteredItems.length === 0 ? (
-              <div className={styles.emptyState}>
-                <Search size={40} />
-                <p>No Data Detected</p>
+      {items.length === 0 ? (
+        <div className={styles.dashboard}>
+          <div className={styles.hero}>
+            <div className={styles.heroIcon}><Shield size={48} /></div>
+            <h2>Ready to Audit</h2>
+            <p>현재 페이지의 접근성을 진단합니다.</p>
+            {currentTabInfo && (
+              <div className={styles.pagePreview}>
+                <span className={styles.pageTitle}>{currentTabInfo.title}</span>
+                <span className={styles.pageUrl}>{currentTabInfo.url}</span>
               </div>
-            ) : (
-              filteredItems.map((item) => (
-                <article 
-                  key={item.id} 
-                  onClick={() => {
-                    setSelectedId(item.id);
-                    handleLocate(item.elementInfo.selector);
-                  }}
-                  className={`${styles.card} ${selectedId === item.id ? styles.selected : ''}`}
-                >
-                  <div className={styles.cardHeader}>
-                    <div className={styles.meta}>
-                      <span className={styles.badge}>{getGuidelineName(item.guideline_id)}</span>
-                      <code>{item.elementInfo?.selector}</code>
-                    </div>
-                    <div className={`${styles.statusTag} ${
-                      item.currentStatus === '오류' ? styles.fail :
-                      item.currentStatus === '부적절' ? styles.inappropriate :
-                      item.currentStatus === '수정 권고' ? styles.recommendation :
-                      item.currentStatus === '검토 필요' ? styles.needs_review :
-                      styles.pass
-                    }`}>
-                      {item.currentStatus === '오류' && <AlertCircle size={12} />}
-                      {item.currentStatus}
-                    </div>
-                  </div>
-                  
-                  <div className={styles.mainInfo}>
-                    <div className={styles.preview}>
-                      {item.elementInfo.tagName === 'VIDEO' ? (
-                        <div className={styles.videoIcon}>
-                          <Clock size={32} />
-                          <span>VIDEO</span>
-                        </div>
-                      ) : (
-                        <img src={item.elementInfo?.src} alt="" />
-                      )}
-                    </div>
-                    <div className={styles.textInfo}>
-                      <h3>{item.result?.message}</h3>
-                      <div className={styles.contextBox}>
-                        <h4>Context Analysis</h4>
-                        <p>"...{item.context?.smartContext}..."</p>
-                      </div>
-                      {item.finalComment && (
-                        <div className={styles.commentBox}>
-                          <h4>Expert Judgement</h4>
-                          <p>{item.finalComment}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+            )}
+            <button className={styles.startBtn} onClick={handleStartAudit}>
+              진단 시작 (Start Audit)
+            </button>
+          </div>
+          <div className={styles.features}>
+            <div className={styles.featItem}><CheckCircle2 size={14} /> KWCAG 2.2 지침</div>
+            <div className={styles.featItem}><CheckCircle2 size={14} /> 실시간 판정</div>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.workArea}>
+          <div className={styles.statsSummary}>
+            <div className={styles.statLine} onClick={() => setStatusFilter('ALL')}>전체 <span>{sessionItems.length}</span></div>
+            <div className={`${styles.statLine} ${styles.fail}`} onClick={() => setStatusFilter('오류')}>오류 <span>{sessionItems.filter(i => i.currentStatus === '오류').length}</span></div>
+          </div>
+          
+          <div className={styles.groupedList}>
+            {groupedItems.map((group) => {
+              const isExpanded = expandedGroups.includes(group.gid);
+              const hasError = group.items.some(i => i.currentStatus === '오류');
+              
+              const formattedGid = group.gid.length === 3 
+                ? `${group.gid[0]}.${group.gid[1]}.${group.gid[2]}`
+                : group.gid;
 
-                  {judgingId === item.id ? (
-                    <div className={styles.judgingArea}>
-                      <div className={styles.quickChips}>
-                        <button onClick={() => setTempComment("주변 정보와 중복되어 장식용 처리를 요청드립니다.")}>#중복정보</button>
-                        <button onClick={() => setTempComment("기능형 이미지에 적절한 동작 설명이 포함되어 있습니다.")}>#적절한동작</button>
-                        <button onClick={() => setTempComment("불필요한 수식어(사진, 이미지) 삭제를 수정 권고(요청)합니다.")}>#수식어삭제</button>
-                      </div>
-                      <textarea 
-                        value={tempComment}
-                        onChange={(e) => setTempComment(e.target.value)}
-                        placeholder="개발자에게 전달할 정성 평가 의견을 입력하세요..."
-                      />
-                      <div className={styles.btnGroup}>
-                        <button onClick={() => setJudgingId(null)} className={styles.cancelBtn}>취소</button>
-                        <button onClick={() => handleJudge(item.id, '적절')} className={styles.passBtn}>적절함 확인</button>
-                        <button onClick={() => handleJudge(item.id, '수정 권고')} className={styles.recomBtn}>개선 권고 요청</button>
-                        <button onClick={() => handleJudge(item.id, '부적절')} className={styles.inappBtn}>수정 요청 (부적절)</button>
-                      </div>
+              return (
+                <section key={group.gid} className={styles.groupSection}>
+                  <header 
+                    className={`${styles.groupHeader} ${hasError ? styles.hasError : ''}`}
+                    onClick={() => toggleGroup(group.gid)}
+                  >
+                    <div className={styles.headerLeft}>
+                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      <span className={styles.gidLabel}>{formattedGid} {group.label}</span>
                     </div>
-                  ) : (
-                    <div className={styles.cardFooter}>
-                      <div className={styles.actionGroup}>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setJudgingId(item.id); setTempComment(item.finalComment); }}
-                          className={styles.actionBtn}
+                    <span className={styles.countBadge}>{group.items.length}</span>
+                  </header>
+                  
+                  {isExpanded && (
+                    <div className={styles.groupContent}>
+                      {group.items.map((item) => (
+                        <article 
+                          key={item.id} 
+                          onClick={() => { setSelectedId(item.id); handleLocate(item.elementInfo.selector); }}
+                          className={`${styles.miniCard} ${selectedId === item.id ? styles.selected : ''}`}
                         >
-                          <Edit3 size={14} /> 수정
-                        </button>
-                        {item.currentStatus === '검토 필요' ? (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); handleJudge(item.id, '적절'); }}
-                            className={`${styles.actionBtn} ${styles.confirmBtn}`}
-                          >
-                            <CheckCircle2 size={14} /> 검토 완료
-                          </button>
-                        ) : item.currentStatus === '적절' && (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); handleJudge(item.id, '검토 필요'); }}
-                            className={`${styles.actionBtn} ${styles.undoBtn}`}
-                          >
-                            <RotateCcw size={14} /> 검토 필요로 되돌리기
-                          </button>
-                        )}
-                      </div>
-                      <button 
-                        className={styles.detailBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (selectedId === item.id && isPropPanelOpen) {
-                            setIsPropPanelOpen(false);
-                          } else {
-                            setSelectedId(item.id);
-                            setIsPropPanelOpen(true);
-                            handleLocate(item.elementInfo.selector);
-                          }
-                        }}
-                      >
-                        <span>자세히 보기</span>
-                        {selectedId === item.id && isPropPanelOpen ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
-                      </button>
+                          <div className={styles.cardTop}>
+                            <div className={`${styles.miniStatus} ${item.currentStatus === '오류' ? styles.fail : styles.pass}`}>
+                              {item.currentStatus}
+                            </div>
+                          </div>
+                          <h3>{item.result?.message}</h3>
+                          <code className={styles.selector}>{item.elementInfo.selector}</code>
+                          
+                          {selectedId === item.id && (
+                            <div className={styles.miniDetail}>
+                              <p className={styles.ctx}>"{item.context.smartContext}"</p>
+                              <div className={styles.miniActions}>
+                                <button onClick={(e) => { e.stopPropagation(); setJudgingId(item.id); setTempComment(item.finalComment); }}>판정</button>
+                                <button onClick={(e) => { e.stopPropagation(); setIsPropPanelOpen(true); }}>상세</button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {judgingId === item.id && (
+                            <div className={styles.miniJudge} onClick={e => e.stopPropagation()}>
+                              <textarea value={tempComment} onChange={e => setTempComment(e.target.value)} />
+                              <div className={styles.judgeBtns}>
+                                <button onClick={() => handleJudge(item.id, '적절')} className={styles.pBtn}>적절</button>
+                                <button onClick={() => handleJudge(item.id, '오류')} className={styles.fBtn}>오류</button>
+                              </div>
+                            </div>
+                          )}
+                        </article>
+                      ))}
                     </div>
                   )}
-                </article>
-              ))
-            )}
-          </section>
-
-          {isPropPanelOpen && (
-            <aside className={styles.propPanel}>
-              <div className={styles.propHeader}>
-                <h3><div className={styles.indicator}></div> 상세 속성 및 이력</h3>
-                <button className={styles.closeBtn} onClick={() => setIsPropPanelOpen(false)}>
-                  <X size={18} />
-                </button>
-              </div>
-              {selectedItem ? (
-                <div className={`${styles.propContent} ${styles.customScrollbar}`}>
-                  <section>
-                    <h4>Technical Metadata</h4>
-                    <div className={styles.techMeta}>
-                      {`<${selectedItem.elementInfo.tagName.toLowerCase()} ...>`}
-                    </div>
-                    <div className={styles.tagList}>
-                      <div className={styles.tagItem}>
-                        <label>Tag</label>
-                        <span>{selectedItem.elementInfo.tagName}</span>
-                      </div>
-                      <div className={styles.tagItem}>
-                        <label>ID</label>
-                        <span>{selectedItem.guideline_id}</span>
-                      </div>
-                    </div>
-                  </section>
-                  
-                  <section>
-                    <h4>Judgment Timeline</h4>
-                    <ul className={styles.timeline}>
-                      {selectedItem.history.map((log: any, i: number) => (
-                        <li key={i}>
-                          <div className={styles.dot}></div>
-                          <time>{log.timestamp}</time>
-                          <div className={styles.logStatus}>{log.status}</div>
-                          <p className={styles.logComment}>"{log.comment}"</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-
-                  <section>
-                    <h4>Compliance Guide</h4>
-                    <div className={styles.guideBox}>
-                      <Info size={20} style={{ flexShrink: 0 }} />
-                      <p>
-                        {selectedItem.guideline_id === '1.1.1' ? "텍스트가 아닌 콘텐츠에는 그 의미나 용도를 알 수 있도록 대체 텍스트를 제공해야 합니다." : 
-                         selectedItem.guideline_id === '1.2' ? "멀티미디어 콘텐츠에는 자막, 대본 또는 수어를 제공해야 합니다." : 
-                         "웹 접근성 준수 지침에 따라 적절한 대체 수단을 제공하세요."}
-                      </p>
-                    </div>
-                  </section>
-                </div>
-              ) : (
-                <div className={styles.emptyProp}>
-                  <ChevronRight size={32} />
-                  <p>Select an item to view details</p>
-                </div>
-              )}
-            </aside>
-          )}
+                </section>
+              );
+            })}
+          </div>
         </div>
-      </main>
+      )}
+
+      {isPropPanelOpen && selectedItem && (
+        <div className={styles.fullPropPanel}>
+          <header>
+            <h3>Detail View</h3>
+            <button onClick={() => setIsPropPanelOpen(false)}><X size={18} /></button>
+          </header>
+          <div className={styles.propBody}>
+            <section>
+              <h4>Selector</h4>
+              <code>{selectedItem.elementInfo.selector}</code>
+            </section>
+            <section>
+              <h4>Context</h4>
+              <p>{selectedItem.context.smartContext}</p>
+            </section>
+            <section>
+              <h4>History</h4>
+              {selectedItem.history.map((h: any, i: number) => (
+                <div key={i} className={styles.histItem}>
+                  <span>{h.timestamp}</span>
+                  <strong>{h.status}</strong>
+                  <p>{h.comment}</p>
+                </div>
+              ))}
+            </section>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 export default App;

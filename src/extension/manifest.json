@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ABT - A11Y Browser Tester",
   "version": "1.0.0",
-  "permissions": ["sidePanel", "storage", "activeTab", "scripting"],
+  "permissions": ["sidePanel", "storage", "activeTab", "scripting", "tabs"],
   "action": {
     "default_title": "Open ABT Dashboard"
   },
