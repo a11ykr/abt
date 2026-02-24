@@ -12,8 +12,7 @@ export default defineConfig({
       input: {
         sidepanel: path.resolve(__dirname, 'src/renderer/sidepanel.html'),
         background: path.resolve(__dirname, 'src/extension/background.js'),
-        'engine/ABT-Connector': path.resolve(__dirname, 'src/engine/ABT-Connector.js'),
-        'engine/ABT-Core': path.resolve(__dirname, 'src/engine/ABT-Core.js'),
+        'engine/abt-engine': path.resolve(__dirname, 'src/engine/extension-engine-bundle.js'),
       },
       output: {
         entryFileNames: '[name].js',

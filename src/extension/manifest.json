@@ -16,7 +16,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["engine/ABT-Connector.js", "engine/ABT-Core.js"]
+      "js": ["engine/abt-engine.js"]
     }
   ]
 }

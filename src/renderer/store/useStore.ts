@@ -157,7 +157,10 @@ export const useStore = create<ABTStore>()(
     {
       name: 'abt-storage',
       storage: createJSONStorage(() => ({
-        getItem: (name) => chrome.storage.local.get(name).then(res => res[name] || null),
+        getItem: async (name): Promise<string | null> => {
+          const res = await chrome.storage.local.get(name);
+          return (res[name] as string) || null;
+        },
         setItem: (name, value) => chrome.storage.local.set({ [name]: value }),
         removeItem: (name) => chrome.storage.local.remove(name),
       })),
