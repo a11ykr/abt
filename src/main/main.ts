@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 const WebSocket = require('ws');
 
@@ -33,6 +33,14 @@ function startWebSocketServer() {
 
     wss.on('connection', (ws) => {
       console.log('🤝 BROWSER CONNECTED');
+
+      
+      // 데스크탑 앱(Renderer)에서 온 명령을 브라우저로 전달
+      ipcMain.on('send-to-browser', (event, payload) => {
+        if (ws.readyState === 1) { // 1 is WebSocket.OPEN
+          ws.send(JSON.stringify(payload));
+        }
+      });
       ws.on('message', (message) => {
         try {
           const data = JSON.parse(message.toString());

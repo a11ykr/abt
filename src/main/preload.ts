@@ -9,4 +9,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     };
   },
   sendAbtData: (data: any) => ipcRenderer.send('abt-data-received', data),
+
+  sendToBrowser: (payload: any) => ipcRenderer.send('send-to-browser', payload),
 });
