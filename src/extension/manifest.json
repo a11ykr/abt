@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "ABT - A11Y Browser Tester",
+  "version": "1.0.0",
+  "permissions": ["sidePanel", "storage", "activeTab", "scripting"],
+  "action": {
+    "default_title": "Open ABT Dashboard"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["engine/ABT-Connector.js", "engine/ABT-Core.js"]
+    }
+  ]
+}
