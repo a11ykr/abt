@@ -8,7 +8,9 @@
     "dev:renderer": "vite",
     "dev:main": "tsc -w -p tsconfig.json",
     "dev:electron": "NODE_ENV=development electron .",
-    "build": "vite build && tsc -p tsconfig.json && electron-builder"
+    "build": "vite build && tsc -p tsconfig.json && electron-builder",
+    "dev:ext": "vite",
+    "build:ext": "vite build && cp src/extension/manifest.json dist/"
   },
   "build": {
     "files": [
