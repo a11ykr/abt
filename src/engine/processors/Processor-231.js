@@ -10,7 +10,7 @@ class Processor231 {
 
   async scan() {
     const reports = [];
-    const elements = document.querySelectorAll('marquee, blink, video, [class*="anim"], [class*="flash"]');
+    const elements = document.querySelectorAll('marquee, blink, video');
     
     if (elements.length > 0) {
       for (const el of elements) {
@@ -25,16 +25,18 @@ class Processor231 {
   analyze(el, isDocumentLevel = false) {
     let status = "검토 필요";
     let message = "초당 3~50회의 주기로 번쩍이는 콘텐츠가 있는지 수동으로 검토하세요. (광과민성 발작 주의)";
-    const rules = ["Rule 631 (Manual Review)"];
+    const rules = ["Rule 2.3.1 (Manual Review)"];
     
-    if (!isDocumentLevel && ["marquee", "blink"].includes(el.tagName.toLowerCase())) {
-      status = "오류";
-      message = `<${el.tagName.toLowerCase()}> 태그가 사용되었습니다. 번쩍이거나 스크롤되는 콘텐츠를 제어할 수 있어야 합니다.`;
-      rules.push("Rule 631 (Deprecated Tags)");
-    } else if (!isDocumentLevel) {
-      message = `애니메이션/비디오 관련 요소가 감지되었습니다. 3회 이상 번쩍임이 있는지 수동 검토가 필요합니다.`;
+    if (!isDocumentLevel) {
+      if (["marquee", "blink"].includes(el.tagName.toLowerCase())) {
+        status = "오류";
+        message = `<${el.tagName.toLowerCase()}> 태그가 사용되었습니다. 이 태그는 접근성을 심각하게 저해하며 최신 웹 표준에서 폐기되었으므로 사용을 금지합니다.`;
+        rules.push("Rule 2.3.1 (Deprecated Tags)");
+      } else {
+        message = "페이지 내에 동적 미디어 요소(비디오 등)가 감지되었습니다. 1초에 3회 이상 번쩍이는 콘텐츠가 포함되어 있는지 수동으로 확인하세요.";
+        rules.push("Rule 2.3.1 (Check Media Content)");
+      }
     }
-
     return this.createReport(el, status, message, rules);
   }
 

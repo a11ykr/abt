@@ -23,8 +23,31 @@ class Processor212 {
     const tabindexedElements = Array.from(document.querySelectorAll('[tabindex]'))
       .filter(el => parseInt(el.getAttribute('tabindex') || '0', 10) > 0);
     
-    if (tabindexedElements.length > 0) {
-      reports.push(this.createGeneralReport("수정 권고", `페이지 내에 양수 값의 tabindex(${tabindexedElements.length}개)가 존재합니다. 이는 논리적인 초점 이동 순서를 방해할 수 있으므로 마크업 순서 조정을 권장합니다.`));
+    const problematicTabindexes = tabindexedElements.filter(el => {
+      // 페이지 상단 15% 이내(헤더/GNB 영역 등)에 시각적으로 위치해 있다면 예외 처리
+      const rect = el.getBoundingClientRect();
+      const isAtTopVisually = rect.top < window.innerHeight * 0.15;
+      
+      // DOM 트리 구조 상 최상위 그룹에 속하는지 계산 (단순화된 휴리스틱)
+      let current = el;
+      let isEarlyInDom = true;
+      
+      while (current && current !== document.body) {
+        // 부모의 자식 요소 중 첫 5번째 이내에 들지 못하면 문서 뒤쪽으로 판단
+        const index = Array.from(current.parentElement?.children || []).indexOf(current);
+        if (index > 5) {
+          isEarlyInDom = false;
+          break;
+        }
+        current = current.parentElement;
+      }
+
+      // 시각적으로도 상단이 아니고, 마크업 구조로도 초반이 아닐 때만 문제로 간주
+      return !(isAtTopVisually || isEarlyInDom);
+    });
+    
+    if (problematicTabindexes.length > 0) {
+      reports.push(this.createGeneralReport("수정 권고", `문서 중간/하단에 위치한 요소들에 양수 값의 tabindex(${problematicTabindexes.length}개)가 존재합니다. 이는 논리적인 초점 이동 순서를 방해할 수 있으므로, 가급적 DOM 구조를 통해 순서를 제어할 것을 권장합니다.`));
     }
 
     return reports;

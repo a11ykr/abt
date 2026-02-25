@@ -37,7 +37,17 @@ class Processor211 {
 
     // [케이스 D] 모달 대화상자 탐지 (키보드 트랩 및 초점 가둠 검토)
     if (role === 'dialog' || role === 'alertdialog' || ariaModal) {
-      return this.createReport(el, "검토 필요", "모달 대화상자가 탐지되었습니다. 키보드 초점이 모달 내부에 갇히는지(Focus Trap), Esc 키로 닫을 수 있는지, 그리고 닫힌 후 초점이 이전 위치로 복귀하는지 수동으로 검토하세요.");
+      // 모달 내부에 명확한 닫기 버튼이 있는지 추가 확인
+      const hasCloseButton = Array.from(el.querySelectorAll('button, [role="button"], a[href]')).some(child => {
+        const text = child.textContent.toLowerCase() + (child.getAttribute('aria-label') || "").toLowerCase() + (child.getAttribute('title') || "").toLowerCase();
+        return text.includes('닫기') || text.includes('close') || text.includes('취소') || text.includes('cancel') || text.includes('x');
+      });
+
+      if (!hasCloseButton) {
+        return this.createReport(el, "검토 필요", "모달 대화상자가 탐지되었으나, 내부에서 명확한 닫기 버튼(텍스트 '닫기', 'X' 등)을 찾을 수 없습니다. 사용자가 키보드(Esc 키 등)나 다른 수단으로 이 영역을 빠져나갈 수 있는지 반드시 확인하세요.", ["Rule 3.1 (Modal Exit)"]);
+      } else {
+        return this.createReport(el, "검토 필요", "모달 대화상자가 탐지되었습니다. 닫기 버튼은 존재하나, 키보드 초점이 모달 내부에 정상적으로 갇히는지(Focus Trap)와 닫힌 후 원래 위치로 초점이 복귀하는지 수동으로 검토하세요.", ["Rule 3.1 (Modal Trapping)"]);
+      }
     }
 
     if (!isInteractiveTag && hasClick && !hasTabindex && !['presentation', 'none'].includes(role)) {

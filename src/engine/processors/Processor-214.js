@@ -1,6 +1,6 @@
 /**
- * ABT Processor 614
- * KWCAG 2.2 지침 2.1.4 입력 장치 접근성 (Input Device Accessibility)
+ * ABT Processor 214 (Character Key Shortcuts)
+ * KWCAG 2.2 지침 2.1.4 문자 단축키
  */
 class Processor214 {
   constructor() {
@@ -11,53 +11,45 @@ class Processor214 {
   async scan() {
     const reports = [];
     
-    // Check for global touch/pointer event handlers that might disable scroll/zoom
-    // This is hard to detect perfectly statically, so we check common antipatterns
-    const touchElements = document.querySelectorAll('*');
-    let foundPreventDefault = false;
+    // 키보드 이벤트 리스너가 걸린 요소를 찾습니다 (주로 document나 window에 걸리지만 인라인도 확인)
+    const elementsWithKeys = document.querySelectorAll('[onkeydown], [onkeypress], [onkeyup]');
+    
+    for (const el of elementsWithKeys) {
+      if (this.utils.isHidden(el)) continue;
 
-    // Check inline handlers for preventDefault on touch events
-    for (const el of touchElements) {
-      const touchstart = el.getAttribute('ontouchstart');
-      const touchmove = el.getAttribute('ontouchmove');
+      const keydown = el.getAttribute('onkeydown') || "";
+      const keypress = el.getAttribute('onkeypress') || "";
+      const keyup = el.getAttribute('onkeyup') || "";
       
-      if ((touchstart && touchstart.includes('preventDefault')) || 
-          (touchmove && touchmove.includes('preventDefault'))) {
-        reports.push(this.analyze(el, "inline"));
-        foundPreventDefault = true;
+      const allHandlers = (keydown + keypress + keyup).toLowerCase();
+
+      // 핸들러 문자열 내에 특수키 검사 로직(ctrlKey, altKey, metaKey)이 없는 경우 단일 문자 단축키 의심
+      const hasModifiers = allHandlers.includes('ctrlkey') || allHandlers.includes('altkey') || allHandlers.includes('metakey');
+      
+      if (allHandlers && !hasModifiers) {
+        reports.push(this.analyze(el));
       }
     }
 
-    // Check CSS touch-action
-    const styles = window.getComputedStyle(document.body);
-    if (styles.touchAction === 'none') {
-      reports.push(this.analyze(document.body, "css"));
-    } else if (!foundPreventDefault) {
-      // General manual review reminder for custom gestures
-      reports.push(this.analyze(document.body, "general"));
-    }
+    // 전역(Global) 이벤트 리스너 감지는 정적 스크립트에서 완벽하지 않으므로 전역 검토 가이드 추가
+    reports.push({
+      guideline_id: this.id,
+      elementInfo: { tagName: "document", selector: "body" },
+      context: { smartContext: "전역 단일 문자 단축키 사용 여부 검토" },
+      result: { 
+        status: "검토 필요", 
+        message: "이 페이지에서 Ctrl, Alt 등 특수키 조합 없이 단일 문자(예: 'J', 'K', '?')만으로 작동하는 단축키가 있는지 확인하세요. 만약 있다면, 해당 단축키를 끄거나 재설정할 수 있는 수단을 제공해야 합니다.",
+        rules: ["Rule 2.1.4 (Character Key Shortcuts)"]
+      },
+      currentStatus: "검토 필요",
+      history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "단일 문자 단축키 수동 검토 필요" }]
+    });
 
     return reports;
   }
 
-  analyze(el, type) {
-    let status = "검토 필요";
-    let message = "다양한 입력 장치(마우스, 키보드, 터치)로 모든 기능이 작동하는지 수동 검토하세요.";
-    const rules = ["Rule 614 (Manual Review)"];
-
-    if (type === "inline") {
-      status = "오류";
-      message = "인라인 터치 이벤트에서 기본 동작(preventDefault)을 막고 있습니다. 스크롤이나 확대가 불가능해질 수 있습니다.";
-      rules.push("Rule 614 (Prevent Default)");
-    } else if (type === "css") {
-      status = "오류";
-      message = "body 요소의 CSS touch-action 속성이 'none'입니다. 모바일 기기에서 핀치 줌 등이 막힙니다.";
-      rules.push("Rule 614 (Touch Action None)");
-    } else {
-      message = "드래그 앤 드롭, 스와이프 등 복잡한 제스처가 필요한 기능이 있다면 단일 포인터(클릭/탭)로도 조작 가능한 대체 수단이 있는지 확인하세요.";
-    }
-
-    return this.createReport(el, status, message, rules);
+  analyze(el) {
+    return this.createReport(el, "검토 필요", "해당 요소에 특수키(Ctrl, Alt 등)를 확인하지 않는 키보드 이벤트 핸들러가 있습니다. 단일 문자 단축키로 작동하는 경우 제어 수단(끄기/변경)이 있는지 확인하세요.", ["Rule 2.1.4 (Single Key Shortcut Suspected)"]);
   }
 
   createReport(el, status, message, rules) {
@@ -67,7 +59,7 @@ class Processor214 {
         tagName: el.tagName,
         selector: el !== document.body ? this.utils.getSelector(el) : "body"
       },
-      context: { smartContext: "입력 장치 제어 및 제스처 검토" },
+      context: { smartContext: el !== document.body ? this.utils.getSmartContext(el) : "전역 스크립트 검토" },
       result: { status, message, rules },
       currentStatus: status,
       history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: message }]
