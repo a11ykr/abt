@@ -1,22 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Shield, Info, Search, Edit3, Clock, ChevronRight, ChevronDown, ChevronLeft, Filter, FileText, CheckCircle2, AlertCircle, Trash2, Folder, FolderOpen, FileCode2, RotateCcw, X } from 'lucide-react';
+import { Shield, Info, Search, Edit3, Clock, ChevronRight, ChevronDown, ChevronLeft, Filter, FileText, CheckCircle2, AlertCircle, Trash2, Folder, FolderOpen, FileCode2, RotateCcw, X, Image as ImageIcon, PlusCircle } from 'lucide-react';
 import styles from './styles/App.module.scss';
-import { useStore, kwcagHierarchy } from './store/useStore';
+import { useStore, kwcagHierarchy, ABTItem } from './store/useStore';
+
 const guidelineNames: Record<string, string> = {
-  "ALL": "전체 지침",
-  "511": "5.1.1 적절한 대체 텍스트",
-  "521": "5.2.1 자막 제공",
-  "611": "6.1.1 키보드 사용 보장",
-  "612": "6.1.2 초점 이동과 표시",
-  "613": "6.1.3 조작 가능",
-  "631": "6.3.1 번쩍임 제한",
-  "641": "6.4.1 건너뛰기 링크",
-  "642": "6.4.2 제목 제공",
-  "643": "6.4.3 링크 텍스트"
+  "ALL": "전체 지침"
 };
 
+const normalizeUrl = (u: string) => u.replace(/\/$/, "").split('?')[0].split('#')[0];
+
 const App = () => {
-  const { items, setItems, addReport, updateItemStatus, removeSession, clearItems, projectName } = useStore();
+  const { items, setItems, addReport, updateItemStatus, setGuidelineScore, removeSession, clearItems, projectName } = useStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [judgingId, setJudgingId] = useState<string | null>(null);
   const [tempComment, setTempComment] = useState("");
@@ -26,56 +20,90 @@ const App = () => {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [isPropPanelOpen, setIsPropPanelOpen] = useState(false);
-  const [selectedSessionUrl, setSelectedSessionUrl] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const [currentTabInfo, setCurrentTabInfo] = useState<{url: string, title: string} | null>(null);
+  const [isManualDashboard, setIsManualDashboard] = useState(false);
+  const [lastTriggeredScanTime, setLastTriggeredScanTime] = useState<number>(0);
 
   useEffect(() => {
+    const updateCurrentTab = () => {
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]) {
+            setCurrentTabInfo({
+              url: tabs[0].url || "",
+              title: tabs[0].title || ""
+            });
+          }
+        });
+      }
+    };
+
+    updateCurrentTab();
+
     if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]) {
-          setCurrentTabInfo({
-            url: tabs[0].url || "",
-            title: tabs[0].title || ""
-          });
+      const tabListener = (tabId: number, changeInfo: any, tab: chrome.tabs.Tab) => {
+        if (changeInfo.status === 'complete' && tab.active) {
+          updateCurrentTab();
         }
-      });
+      };
+      const activeListener = () => updateCurrentTab();
+
+      chrome.tabs.onUpdated.addListener(tabListener);
+      chrome.tabs.onActivated.addListener(activeListener);
+
+      return () => {
+        chrome.tabs.onUpdated.removeListener(tabListener);
+        chrome.tabs.onActivated.removeListener(activeListener);
+      };
     }
   }, []);
 
   const handleStartAudit = () => {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
+      console.log("ABT: Start Audit Button Clicked");
       chrome.runtime.sendMessage({ type: 'RUN_AUDIT' });
     }
   };
 
   const sessions = useMemo(() => {
-    const map = new Map<string, any>();
-    // 최신 세션이 상단에 오도록 items를 역순으로 순회
+    const map = new Map<number, any>();
     [...items].reverse().forEach(item => {
-      const url = item.pageInfo?.url || "Unknown URL";
-      if (!map.has(url)) {
-        map.set(url, item.pageInfo || {
+      const scanId = item.pageInfo?.scanId || 0;
+      if (!map.has(scanId)) {
+        map.set(scanId, item.pageInfo || {
           url: "Unknown URL",
           pageTitle: "Unknown Page",
           timestamp: new Date().toISOString(),
-          scanId: 0
+          scanId: scanId
         });
       }
     });
-    const result = Array.from(map.values());
-    console.log("ABT: Detected sessions (latest first):", result);
-    return result;
+    return Array.from(map.values()).sort((a, b) => b.scanId - a.scanId);
   }, [items]);
 
   useEffect(() => {
-    if (sessions.length > 0) {
-      // 새로운 세션이 추가되거나 최신 세션이 바뀌면 자동 선택
-      // (첫 로드 시 또는 새로운 스캔 시작 시)
-      if (!selectedSessionUrl || !sessions.some(s => s.url === selectedSessionUrl)) {
-        setSelectedSessionUrl(sessions[0].url);
+    if (!currentTabInfo?.url) return;
+    
+    const latestSessionForUrl = sessions.find(s => normalizeUrl(s.url) === normalizeUrl(currentTabInfo.url));
+    
+    if (latestSessionForUrl) {
+      const sessionTime = new Date(latestSessionForUrl.timestamp).getTime();
+      
+      if (!selectedSessionId && !isManualDashboard && lastTriggeredScanTime === 0) {
+        setSelectedSessionId(latestSessionForUrl.scanId);
+      }
+      else if (lastTriggeredScanTime > 0 && sessionTime > lastTriggeredScanTime) {
+        setSelectedSessionId(latestSessionForUrl.scanId);
+        setIsManualDashboard(false);
+        setLastTriggeredScanTime(0);
       }
     }
-  }, [sessions, selectedSessionUrl]);
+  }, [currentTabInfo?.url, sessions, selectedSessionId, isManualDashboard, lastTriggeredScanTime]);
+
+  useEffect(() => {
+    setIsManualDashboard(false);
+  }, [currentTabInfo?.url]);
 
   const toggleGroup = (gid: string) => {
     setExpandedGroups(prev => 
@@ -94,7 +122,6 @@ const App = () => {
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.runtime) return;
 
-    // Connect to background for persistent relay
     const port = chrome.runtime.connect({ name: 'abt-sidepanel' });
     const extensionListener = (message: any) => {
       if (message.type === 'UPDATE_ABT_LIST') {
@@ -112,15 +139,10 @@ const App = () => {
     };
   }, [addReport]);
 
-  const guidelineTabs = useMemo(() => {
-    const ids = Array.from(new Set(items.map(i => i.guideline_id)));
-    return ["ALL", ...ids];
-  }, [items]);
-
   const filteredItems = useMemo(() => {
     let result = items;
-    if (selectedSessionUrl) {
-      result = result.filter(i => i.pageInfo?.url === selectedSessionUrl);
+    if (selectedSessionId) {
+      result = result.filter(i => i.pageInfo?.scanId === selectedSessionId);
     }
     if (activeTab !== "ALL") {
       result = result.filter(i => i.guideline_id === activeTab);
@@ -129,45 +151,41 @@ const App = () => {
       result = result.filter(i => i.currentStatus === statusFilter);
     }
     return result;
-  }, [items, selectedSessionUrl, activeTab, statusFilter]);
+  }, [items, selectedSessionId, activeTab, statusFilter]);
 
-  const groupedItems = useMemo(() => {
-    const groups: Record<string, typeof filteredItems> = {};
+  const allGroupedItems = useMemo(() => {
+    const itemMap: Record<string, ABTItem[]> = {};
     filteredItems.forEach(item => {
-      if (!groups[item.guideline_id]) {
-        groups[item.guideline_id] = [];
-      }
-      groups[item.guideline_id].push(item);
+      if (!itemMap[item.guideline_id]) itemMap[item.guideline_id] = [];
+      itemMap[item.guideline_id].push(item);
     });
 
-    return Object.keys(groups)
-      .sort((a, b) => {
-        return parseInt(a) - parseInt(b);
-      })
-      .map(gid => ({
-        gid,
-        label: getGuidelineName(gid),
-        items: groups[gid]
-      }));
+    const result: {gid: string, label: string, items: ABTItem[]}[] = [];
+    kwcagHierarchy.forEach(principle => {
+      principle.items.forEach(item => {
+        result.push({
+          gid: item.id,
+          label: item.label,
+          items: itemMap[item.id] || []
+        });
+      });
+    });
+    return result;
   }, [filteredItems]);
 
   useEffect(() => {
-    const errorGids = groupedItems
+    const errorGids = allGroupedItems
       .filter(g => g.items.some(i => i.currentStatus === '오류'))
       .map(g => g.gid);
     
     if (errorGids.length > 0) {
-      setExpandedGroups(prev => {
-        const next = [...new Set([...prev, ...errorGids])];
-        return next;
-      });
+      setExpandedGroups(prev => [...new Set([...prev, ...errorGids])]);
     }
-  }, [groupedItems]);
+  }, [allGroupedItems]);
 
-  // 전체 통계 계산 (선택된 세션 기준)
   const sessionItems = useMemo(() => {
-    return items.filter(i => i.pageInfo?.url === selectedSessionUrl);
-  }, [items, selectedSessionUrl]);
+    return items.filter(i => i.pageInfo?.scanId === selectedSessionId);
+  }, [items, selectedSessionId]);
 
   const handleJudge = (id: string, nextStatus: string) => {
     const nextItems = items.map(item => {
@@ -193,23 +211,15 @@ const App = () => {
   const generateMarkdownReport = async () => {
     const date = new Date().toLocaleDateString();
     let md = `# 🛡️ ABT 접근성 진단 리포트 (${date})\n\n`;
-    
     const fails = items.filter(i => i.currentStatus === '오류').length;
     const inapps = items.filter(i => i.currentStatus === '부적절').length;
     const recs = items.filter(i => i.currentStatus === '수정 권고').length;
-    
-    md += `## 📊 진단 요약\n`;
-    md += `- **❌ 오류:** ${fails}건\n`;
-    md += `- **🚫 부적절:** ${inapps}건\n`;
-    md += `- **⚠️ 수정 권고:** ${recs}건\n\n`;
-    md += `---\n\n`;
+    md += `## 📊 진단 요약\n- **❌ 오류:** ${fails}건\n- **🚫 부적절:** ${inapps}건\n- **⚠️ 수정 권고:** ${recs}건\n\n---\n\n`;
 
     const activeGuidelines = Array.from(new Set(items.filter(i => i.currentStatus !== '적절').map(i => i.guideline_id)));
-    
     activeGuidelines.forEach(gid => {
       md += `## 📘 ${getGuidelineName(gid)}\n\n`;
       const gidItems = items.filter(i => i.guideline_id === gid && i.currentStatus !== '적절');
-      
       gidItems.forEach(item => {
         const statusIcon = item.currentStatus === '오류' ? '❌' : item.currentStatus === '부적절' ? '🚫' : '⚠️';
         md += `### ${statusIcon} [${item.currentStatus}] ${item.elementInfo.selector}\n`;
@@ -219,17 +229,13 @@ const App = () => {
         md += `- **주변 맥락:** *"${item.context.smartContext}"*\n\n`;
       });
     });
-
     md += `---\n*Generated by ABT (A11Y Browser Tester) Desktop*`;
     
     if ('showSaveFilePicker' in window) {
       try {
         const handle = await (window as any).showSaveFilePicker({
           suggestedName: `ABT_Report_${new Date().toISOString().split('T')[0]}.md`,
-          types: [{
-            description: 'Markdown File',
-            accept: { 'text/markdown': ['.md'] },
-          }],
+          types: [{ description: 'Markdown File', accept: { 'text/markdown': ['.md'] } }],
         });
         const writable = await handle.createWritable();
         await writable.write(md);
@@ -237,15 +243,9 @@ const App = () => {
         setCopyStatus(true);
         setTimeout(() => setCopyStatus(false), 2000);
       } catch (err) {
-        // User cancelled or error occurred
-        if ((err as Error).name !== 'AbortError') {
-          console.error("File save failed, falling back to clipboard", err);
-          copyToClipboard(md);
-        }
+        if ((err as Error).name !== 'AbortError') copyToClipboard(md);
       }
-    } else {
-      copyToClipboard(md);
-    }
+    } else copyToClipboard(md);
   };
 
   const copyToClipboard = (text: string) => {
@@ -256,14 +256,8 @@ const App = () => {
   };
 
   const selectedItem = items.find(i => i.id === selectedId);
-
-
   const handleLocate = (selector: string) => {
-    const message = {
-      type: 'locate-element',
-      selector: selector
-    };
-    chrome.runtime.sendMessage(message);
+    chrome.runtime.sendMessage({ type: 'locate-element', selector });
   };
 
   return (
@@ -277,12 +271,13 @@ const App = () => {
           </div>
         </div>
         <div className={styles.headerActions}>
+          <button onClick={() => { setSelectedSessionId(null); setIsManualDashboard(true); }} title="새 진단" className={styles.iconBtn}><PlusCircle size={16} /></button>
           <button onClick={clearItems} title="전체 삭제" className={styles.iconBtn}><Trash2 size={16} /></button>
           <button onClick={generateMarkdownReport} title="리포트 추출" className={`${styles.iconBtn} ${copyStatus ? styles.success : ''}`}><FileText size={16} /></button>
         </div>
       </header>
 
-      {items.length === 0 ? (
+      {!selectedSessionId ? (
         <div className={styles.dashboard}>
           <div className={styles.hero}>
             <div className={styles.heroIcon}><Shield size={48} /></div>
@@ -294,9 +289,22 @@ const App = () => {
                 <span className={styles.pageUrl}>{currentTabInfo.url}</span>
               </div>
             )}
-            <button className={styles.startBtn} onClick={handleStartAudit}>
+            <button className={styles.startBtn} onClick={() => { setLastTriggeredScanTime(Date.now()); handleStartAudit(); }}>
               진단 시작 (Start Audit)
             </button>
+            {sessions.length > 0 && (
+              <div className={styles.historyOption}>
+                <p>
+                  이 사이트에 대한 과거 진단 기록이 있습니다.<br/>
+                  (최근 기록: {new Date(sessions[0].timestamp).toLocaleString()})
+                </p>
+                <div className={styles.optionBtns}>
+                   <button className={styles.viewPrevBtn} onClick={() => setSelectedSessionId(sessions[0].scanId)}>
+                     최근 결과 보기
+                   </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className={styles.features}>
             <div className={styles.featItem}><CheckCircle2 size={14} /> KWCAG 2.2 지침</div>
@@ -306,69 +314,167 @@ const App = () => {
       ) : (
         <div className={styles.workArea}>
           <div className={styles.statsSummary}>
-            <div className={styles.statLine} onClick={() => setStatusFilter('ALL')}>전체 <span>{sessionItems.length}</span></div>
-            <div className={`${styles.statLine} ${styles.fail}`} onClick={() => setStatusFilter('오류')}>오류 <span>{sessionItems.filter(i => i.currentStatus === '오류').length}</span></div>
+            <div className={`${styles.statLine} ${statusFilter === 'ALL' ? styles.active : ''}`} onClick={() => setStatusFilter('ALL')}>전체 <span>{sessionItems.length}</span></div>
+            <div className={`${styles.statLine} ${styles.fail} ${statusFilter === '오류' ? styles.active : ''}`} onClick={() => setStatusFilter('오류')}>오류 <span>{sessionItems.filter(i => i.currentStatus === '오류').length}</span></div>
+            <div className={`${styles.statLine} ${styles.review} ${statusFilter === '검토 필요' ? styles.active : ''}`} onClick={() => setStatusFilter('검토 필요')}>검토 필요 <span>{sessionItems.filter(i => i.currentStatus === '검토 필요').length}</span></div>
+            <div className={`${styles.statLine} ${styles.pass} ${statusFilter === '적절' ? styles.active : ''}`} onClick={() => setStatusFilter('적절')}>검토 완료 <span>{sessionItems.filter(i => i.currentStatus === '적절').length}</span></div>
+          </div>
+
+          <div className={styles.sessionSelector}>
+            <Clock size={12} />
+            <select value={selectedSessionId || ""} onChange={(e) => setSelectedSessionId(Number(e.target.value))}>
+              {sessions.map(s => (
+                <option key={s.scanId} value={s.scanId}>
+                  {new Date(s.timestamp).toLocaleString()} ({s.pageTitle})
+                </option>
+              ))}
+            </select>
           </div>
           
           <div className={styles.groupedList}>
-            {groupedItems.map((group) => {
+            {allGroupedItems.map((group) => {
               const isExpanded = expandedGroups.includes(group.gid);
               const hasError = group.items.some(i => i.currentStatus === '오류');
-              
-              const formattedGid = group.gid.length === 3 
-                ? `${group.gid[0]}.${group.gid[1]}.${group.gid[2]}`
-                : group.gid;
 
               return (
                 <section key={group.gid} className={styles.groupSection}>
-                  <header 
-                    className={`${styles.groupHeader} ${hasError ? styles.hasError : ''}`}
-                    onClick={() => toggleGroup(group.gid)}
-                  >
+                  <header className={`${styles.groupHeader} ${hasError ? styles.hasError : ''}`} onClick={() => toggleGroup(group.gid)}>
                     <div className={styles.headerLeft}>
                       {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      <span className={styles.gidLabel}>{formattedGid} {group.label}</span>
+                      <span className={styles.gidLabel}>{group.gid} {group.label}</span>
                     </div>
-                    <span className={styles.countBadge}>{group.items.length}</span>
+                    <div className={styles.headerRight}>
+                      {(() => {
+                        const total = group.items.length;
+                        const manualScore = total > 0 ? group.items[0].manualScore : undefined;
+
+                        if (manualScore !== undefined) {
+                          return (
+                            <span 
+                              className={`${styles.scoreBadge} ${manualScore < 60 ? styles.bad : manualScore < 90 ? styles.warning : styles.good}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const val = prompt("점수 입력 (0-100):", manualScore.toString());
+                                if (val !== null && selectedSessionId) setGuidelineScore(selectedSessionId, group.gid, parseInt(val));
+                              }}
+                            >
+                              {manualScore}점 (수동)
+                            </span>
+                          );
+                        }
+
+                        if (total === 0) return (
+                          <span 
+                            className={styles.naBadge}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              alert("N/A 항목은 검출된 요소가 없어 점수를 저장할 수 없습니다.");
+                            }}
+                          >
+                            N/A
+                          </span>
+                        );
+
+                        const review = group.items.filter(i => i.currentStatus === '검토 필요').length;
+                        const fail = group.items.filter(i => i.currentStatus === '오류').length;
+                        
+                        if (fail === 0 && review > 0) {
+                          return (
+                            <span 
+                              className={`${styles.scoreBadge} ${styles.manual}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const val = prompt("수동 검사 점수 입력 (0-100):");
+                                if (val !== null && selectedSessionId) setGuidelineScore(selectedSessionId, group.gid, parseInt(val));
+                              }}
+                            >
+                              수동 검사 필요
+                            </span>
+                          );
+                        }
+
+                        const pass = group.items.filter(i => i.currentStatus === '적절').length;
+                        let score = 100;
+                        const exhaustiveGids = ['1.1.1', '1.3.1', '2.1.1', '2.4.3', '2.5.3', '3.3.2'];
+                        
+                        if (exhaustiveGids.includes(group.gid)) {
+                          score = Math.round(((pass * 100 + review * 50) / (total * 100)) * 100);
+                        } else {
+                          const rawScore = 100 * Math.pow(0.8, fail) * Math.pow(0.95, review);
+                          score = Math.round(rawScore);
+                          if (total > 0 && pass === total) score = 100;
+                        }
+
+                        return (
+                          <span 
+                            className={`${styles.scoreBadge} ${score < 60 ? styles.bad : score < 90 ? styles.warning : styles.good}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const val = prompt("점수 직접 수정 (0-100):", score.toString());
+                              if (val !== null && selectedSessionId) setGuidelineScore(selectedSessionId, group.gid, parseInt(val));
+                            }}
+                          >
+                            {score}점
+                          </span>
+                        );
+                      })()}
+                      <span className={styles.countBadge}>{group.items.length}</span>
+                    </div>
                   </header>
                   
                   {isExpanded && (
                     <div className={styles.groupContent}>
-                      {group.items.map((item) => (
-                        <article 
-                          key={item.id} 
-                          onClick={() => { setSelectedId(item.id); handleLocate(item.elementInfo.selector); }}
-                          className={`${styles.miniCard} ${selectedId === item.id ? styles.selected : ''}`}
-                        >
-                          <div className={styles.cardTop}>
-                            <div className={`${styles.miniStatus} ${item.currentStatus === '오류' ? styles.fail : styles.pass}`}>
-                              {item.currentStatus}
-                            </div>
-                          </div>
-                          <h3>{item.result?.message}</h3>
-                          <code className={styles.selector}>{item.elementInfo.selector}</code>
-                          
-                          {selectedId === item.id && (
-                            <div className={styles.miniDetail}>
-                              <p className={styles.ctx}>"{item.context.smartContext}"</p>
-                              <div className={styles.miniActions}>
-                                <button onClick={(e) => { e.stopPropagation(); setJudgingId(item.id); setTempComment(item.finalComment); }}>판정</button>
-                                <button onClick={(e) => { e.stopPropagation(); setIsPropPanelOpen(true); }}>상세</button>
+                      {group.items.length === 0 ? (
+                        <div className={styles.emptyState}>검출된 항목이 없습니다.</div>
+                      ) : (
+                        group.items.map((item) => (
+                          <article key={item.id} onClick={() => { setSelectedId(item.id); handleLocate(item.elementInfo.selector); }} className={`${styles.miniCard} ${selectedId === item.id ? styles.selected : ''}`}>
+                            <div className={styles.cardLayout}>
+                              {item.elementInfo.src && item.elementInfo.src !== 'N/A' && (
+                                <div className={styles.thumbBox}><img src={item.elementInfo.src} alt="미리보기" /></div>
+                              )}
+                              <div className={styles.cardMain}>
+                                <div className={styles.cardTop}>
+                                  <div className={`${styles.miniStatus} ${styles[item.currentStatus.replace(' ', '_')]}`}>{item.currentStatus}</div>
+                                </div>
+                                <h3>{item.result?.message}</h3>
+                                {item.guideline_id === '1.1.1' && (
+                                  <div className={styles.markupSnippet}>
+                                    &lt;{item.elementInfo.tagName.toLowerCase()} <span className={styles.attrName}>{(item.elementInfo as any).sourceAttr || 'alt'}</span>=<span className={styles.attrVal}>"{item.elementInfo.alt || ''}"</span> ... /&gt;
+                                  </div>
+                                )}
+                                <code className={styles.selector}>{item.elementInfo.selector}</code>
                               </div>
                             </div>
-                          )}
-                          
-                          {judgingId === item.id && (
-                            <div className={styles.miniJudge} onClick={e => e.stopPropagation()}>
-                              <textarea value={tempComment} onChange={e => setTempComment(e.target.value)} />
-                              <div className={styles.judgeBtns}>
-                                <button onClick={() => handleJudge(item.id, '적절')} className={styles.pBtn}>적절</button>
-                                <button onClick={() => handleJudge(item.id, '오류')} className={styles.fBtn}>오류</button>
+                            {selectedId === item.id && (
+                              <div className={styles.miniDetail}>
+                                <div className={styles.smartContextView}>
+                                  {item.guideline_id === '1.1.1' ? (
+                                    <>
+                                      <span>...{item.context.smartContext.split(item.elementInfo.alt || "")[0]}</span>
+                                      <span className={styles.highlight}>[{((item.elementInfo as any).sourceAttr || 'alt')}="{item.elementInfo.alt || ''}"]</span>
+                                      <span>{item.context.smartContext.split(item.elementInfo.alt || "")[1]}...</span>
+                                    </>
+                                  ) : (<span>"{item.context.smartContext}"</span>)}
+                                </div>
+                                <div className={styles.miniActions}>
+                                  <button onClick={(e) => { e.stopPropagation(); setJudgingId(item.id); setTempComment(item.finalComment); }}>판정</button>
+                                  <button onClick={(e) => { e.stopPropagation(); setIsPropPanelOpen(true); }}>상세</button>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </article>
-                      ))}
+                            )}
+                            {judgingId === item.id && (
+                              <div className={styles.miniJudge} onClick={e => e.stopPropagation()}>
+                                <textarea value={tempComment} onChange={e => setTempComment(e.target.value)} />
+                                <div className={styles.judgeBtns}>
+                                  <button onClick={() => handleJudge(item.id, '적절')} className={styles.pBtn}>적절</button>
+                                  <button onClick={() => handleJudge(item.id, '오류')} className={styles.fBtn}>오류</button>
+                                </div>
+                              </div>
+                            )}
+                          </article>
+                        ))
+                      )}
                     </div>
                   )}
                 </section>

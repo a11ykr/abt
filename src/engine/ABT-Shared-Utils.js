@@ -2,16 +2,34 @@
  * ABT Shared Utilities
  * 모든 지침별 프로세서에서 공통으로 사용하는 유틸리티 모음
  */
-window.ABTUtils = {
+window.ABTUtils = Object.assign(window.ABTUtils || {}, {
   /**
    * 요소의 CSS 셀렉터를 생성합니다.
    */
   getSelector: function(el) {
     if (el.id) return `#${el.id}`;
+    // 클래스명이 있는 경우
     if (el.className && typeof el.className === 'string') {
-      return `.${el.className.split(/\s+/).filter(Boolean).join('.')}`;
+      const classes = el.className.split(/\s+/).filter(Boolean).join('.');
+      if (classes) {
+        // 동일 클래스를 가진 형제들 중 몇 번째인지 계산 (고유성 강화)
+        const siblings = Array.from(el.parentElement?.children || []).filter(s => s.className === el.className);
+        if (siblings.length > 1) {
+          const index = siblings.indexOf(el) + 1;
+          return `.${classes}:nth-of-type(${index})`;
+        }
+        return `.${classes}`;
+      }
     }
-    return el.tagName.toLowerCase();
+
+    // ID나 클래스가 없는 경우 태그명 + 순서로 생성
+    const tagName = el.tagName.toLowerCase();
+    const allOfSameTag = Array.from(el.parentElement?.children || []).filter(s => s.tagName.toLowerCase() === tagName);
+    if (allOfSameTag.length > 1) {
+      const index = allOfSameTag.indexOf(el) + 1;
+      return `${tagName}:nth-of-type(${index})`;
+    }
+    return tagName;
   },
 
   /**
@@ -72,5 +90,59 @@ window.ABTUtils = {
     const brighter = Math.max(l1, l2);
     const darker = Math.min(l1, l2);
     return (brighter + 0.05) / (darker + 0.05);
+  },
+
+  /**
+   * 요소가 화면에 표시되는지(숨겨져 있지 않은지) 확인합니다.
+   */
+  isHidden: function(el) {
+    if (!el) return true;
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return true;
+    
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return true;
+    
+    // 부모 요소 중 하나라도 숨겨져 있는지 체크
+    let parent = el.parentElement;
+    while (parent) {
+      try {
+        const parentStyle = window.getComputedStyle(parent);
+        if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden') return true;
+      } catch (e) {}
+      parent = parent.parentElement;
+    }
+
+    return false;
+  },
+
+  /**
+   * 요소가 이미지 대체 기법(IR) 또는 스크린 리더 전용(SR-only)으로 숨겨져 있는지 확인합니다.
+   */
+  isImageReplacement: function(el) {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+
+    // 1. text-indent 기법
+    const textIndent = parseInt(style.textIndent);
+    if (Math.abs(textIndent) > 500) return true;
+
+    // 2. font-size: 0 기법
+    const fontSize = parseInt(style.fontSize);
+    if (fontSize === 0) return true;
+
+    // 3. sr-only / blind 클래스 표준 기법 (position: absolute + clip)
+    const isAbsolute = style.position === 'absolute';
+    const isClipped = style.clip === 'rect(0px, 0px, 0px, 0px)' || style.clip === 'rect(1px, 1px, 1px, 1px)';
+    const isClipPath = style.clipPath === 'inset(50%)' || style.clipPath === 'inset(100%)';
+    
+    if (isAbsolute && (isClipped || isClipPath)) return true;
+
+    // 4. 위치를 화면 밖으로 밀어내는 기법
+    const left = parseInt(style.left);
+    const top = parseInt(style.top);
+    if (isAbsolute && (left < -5000 || top < -5000)) return true;
+
+    return false;
   }
-};
+});
