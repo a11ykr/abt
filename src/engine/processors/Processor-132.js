@@ -26,11 +26,6 @@ class Processor132 {
         reports.push(this.createReport(el, "검토 필요", `Flex 방향이 '${style.flexDirection}'로 설정되었습니다. 콘텐츠의 읽기 순서가 논리적인지 검토가 필요합니다.`));
       }
 
-      // 3. Tabindex > 0 (611과 겹치지만 선형구조 측면에서도 중요)
-      const tabindex = parseInt(el.getAttribute('tabindex') || '0', 10);
-      if (tabindex > 0) {
-        reports.push(this.createReport(el, "부적절", `양수 값의 tabindex(${tabindex})가 설정되어 자연스러운 선형 흐름을 방해합니다.`));
-      }
 
       // 4. Aria-flowto 사용 (거의 사용되지 않으나 발견 시 안내)
       if (el.hasAttribute('aria-flowto')) {
@@ -44,6 +39,40 @@ class Processor132 {
         reports.push(this.createReport(table, "검토 필요", "레이아웃용 표가 감지되었습니다. CSS 레이아웃(Flex/Grid)으로 전환을 권장하며, 제거 시에도 선형 구조가 유지되는지 확인하세요."));
     }
 
+    // [단계 F] 헤딩 아웃라인 수집 (h1~h6) - 문서의 구조적 순서 확인
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    if (headings.length > 0) {
+      const outline = Array.from(headings).map(h => ({
+        level: parseInt(h.tagName.substring(1)),
+        text: h.innerText.trim(),
+        selector: this.utils.getSelector(h)
+      }));
+      
+      reports.push({
+        guideline_id: this.id,
+        elementInfo: { tagName: 'BODY', selector: 'outline' },
+        context: { smartContext: "페이지 헤딩 구조(Heading Outline) 분석 결과입니다.", outline: outline },
+        result: { status: "적절", message: `페이지 내에 총 ${headings.length}개의 헤딩이 존재합니다.` },
+        currentStatus: "적절",
+        history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "헤딩 아웃라인 수집 완료" }]
+      });
+
+      // 헤딩 순서 논리성 검사
+      let prevLevel = 0;
+      for (const h of outline) {
+        if (prevLevel > 0 && h.level > prevLevel + 1) {
+          reports.push({
+            guideline_id: this.id,
+            elementInfo: { tagName: `H${h.level}`, selector: h.selector },
+            context: { smartContext: `이전 헤딩(H${prevLevel})에서 바로 H${h.level}로 건너뛰었습니다.` },
+            result: { status: "수정 권고", message: "헤딩 수준을 순차적으로 사용하는 것을 권장합니다 (예: h1 -> h2 -> h3)." },
+            currentStatus: "수정 권고",
+            history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "헤딩 순서 건너뜀 탐지" }]
+          });
+        }
+        prevLevel = h.level;
+      }
+    }
     return reports;
   }
 

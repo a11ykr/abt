@@ -1,6 +1,6 @@
 /**
- * ABT Processor 651
- * KWCAG 2.2 지침 2.5.1 표 표제 제공 (Table Caption)
+ * ABT Processor 251 (Single Pointer Input Support)
+ * KWCAG 2.2 지침 2.5.1 단일 포인터 입력 지원 (Single Pointer Input Support)
  */
 class Processor251 {
   constructor() {
@@ -9,68 +9,35 @@ class Processor251 {
   }
 
   async scan() {
-    const tables = document.querySelectorAll('table');
+    // 단일 포인터 입력 지원은 기계적 판정이 어렵습니다.
+    // 드래그, 핀치 줌 등이 필요한 요소를 탐색하여 수동 검토를 유도합니다.
+    const draggableElements = document.querySelectorAll('[draggable="true"], .draggable, [role="slider"]');
     const reports = [];
 
-    for (const el of tables) {
+    for (const el of draggableElements) {
+      if (this.utils.isHidden(el)) continue;
       reports.push(this.analyze(el));
     }
+
+    // 기본 보고서 (항목이 없더라도 지침 안내를 위해 제공 가능하나, 여기선 검출된 경우만)
     return reports;
   }
 
   analyze(el) {
-    const caption = el.querySelector('caption');
-    const summary = el.getAttribute('summary');
-    const ariaLabel = el.getAttribute('aria-label');
-    const ariaDescribedBy = el.getAttribute('aria-describedby');
-    
-    let status = "적절";
-    let message = "데이터 표에 적절한 제목(caption, summary 등)이 제공되었습니다.";
-    const rules = [];
-
-    if (!caption && !summary && !ariaLabel && !ariaDescribedBy) {
-      // Check if it's strictly a layout table
-      const role = el.getAttribute('role');
-      if (role === 'presentation' || role === 'none') {
-        status = "적절";
-        message = "레이아웃용 표로 선언되었습니다 (role='presentation').";
-      } else {
-        status = "오류";
-        message = "데이터 표에 <caption>, summary 또는 aria-label이 제공되지 않았습니다.";
-        rules.push("Rule 651 (Missing Caption)");
-      }
-    } else if (caption && !caption.textContent.trim()) {
-      status = "오류";
-      message = "<caption> 요소가 존재하지만 내용이 비어있습니다.";
-      rules.push("Rule 651 (Empty Caption)");
-    } else if (summary && summary.trim() === "") {
-      status = "오류";
-      message = "summary 속성이 존재하지만 내용이 비어있습니다.";
-      rules.push("Rule 651 (Empty Summary)");
-    } else {
-      status = "검토 필요";
-      message = "표의 제목이 표의 내용과 구조를 명확히 설명하는지 검토하세요.";
-      rules.push("Rule 651 (Manual Review)");
-    }
-
-    return this.createReport(el, status, message, rules, caption, summary);
-  }
-
-  createReport(el, status, message, rules, caption, summary) {
-    let captionText = "없음";
-    if (caption) captionText = `caption: ${caption.textContent.trim()}`;
-    else if (summary) captionText = `summary: ${summary}`;
-
     return {
       guideline_id: this.id,
       elementInfo: {
         tagName: el.tagName,
         selector: this.utils.getSelector(el)
       },
-      context: { smartContext: `표 제목: ${captionText}` },
-      result: { status, message, rules },
-      currentStatus: status,
-      history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: message }]
+      context: { smartContext: "복잡한 제스처(드래그 등)가 필요한 요소가 탐지되었습니다." },
+      result: {
+        status: "검토 필요",
+        message: "이 요소는 길게 누르기, 드래그, 핀치 줌 등 복잡한 제스처가 필요할 수 있습니다. 단일 포인터(탭, 클릭)만으로도 모든 기능을 수행할 수 있는 대체 수단이 제공되는지 확인하세요.",
+        rules: ["Rule 2.5.1 (Single Pointer Support)"]
+      },
+      currentStatus: "검토 필요",
+      history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "수동 검토 필요 항목 탐지" }]
     };
   }
 }

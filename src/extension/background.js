@@ -1,68 +1,78 @@
 /**
- * ABT Background Service Worker
- * Handles message relay between Content Scripts and Side Panel
+ * ABT Background Service Worker (Stable & Detached Popup Mode)
+ * 사이드 패널 대신 독립 팝업 창을 기본으로 사용합니다.
  */
 
-// Track open side panels (if needed for specific targeting)
-let sidePanelPort = null;
+const abtPorts = new Set();
 
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name === 'abt-sidepanel') {
-    sidePanelPort = port;
+    abtPorts.add(port);
     port.onDisconnect.addListener(() => {
-      sidePanelPort = null;
+      abtPorts.delete(port);
     });
   }
 });
 
-// Relay messages from Content Scripts to Side Panel
+// Relay messages from Engine to UI
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // If message is from content script (has sender.tab)
   if (sender.tab) {
-    if (sidePanelPort) {
-      sidePanelPort.postMessage({
-        ...message,
-        tabId: sender.tab.id
-      });
-    } else {
-      // Fallback to broadcast if port is not used
-      chrome.runtime.sendMessage({
-        ...message,
-        tabId: sender.tab.id
-      });
+    if (message.type === 'UPDATE_ABT_LIST') {
+      // 1. Relay to ports
+      if (abtPorts.size > 0) {
+        abtPorts.forEach(port => {
+          try { port.postMessage(message); } catch (e) { abtPorts.delete(port); }
+        });
+      }
+      // 2. Broadcast
+      chrome.runtime.sendMessage(message);
     }
   } 
-  // If message is from Side Panel to Content Script (e.g., locate-element, RUN_AUDIT)
+  // Relay commands from UI to Engine
   else if (message.type === 'locate-element' || message.type === 'RUN_AUDIT') {
-    chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
-      if (tabs[0]) {
-        const tabId = tabs[0].id;
-        console.log("ABT: Relaying message to tab:", tabId, message.type);
+    const targetWinId = message.windowId;
+    
+    const findAndSend = (queryOptions) => {
+      chrome.tabs.query(queryOptions, (tabs) => {
+        // Filter out extension pages
+        const targetTab = tabs.find(t => t.url && !t.url.startsWith('chrome-extension://'));
         
-        chrome.tabs.sendMessage(tabId, message, (response) => {
-          if (chrome.runtime.lastError) {
-            console.log("ABT: Content script not ready, injecting engine...");
-            // Inject engine and retry message
-            chrome.scripting.executeScript({
-              target: { tabId: tabId },
-              files: ['engine/abt-engine.js']
-            }).then(() => {
-              setTimeout(() => {
-                chrome.tabs.sendMessage(tabId, message);
-              }, 100);
-            }).catch(err => console.error("ABT: Failed to inject engine", err));
-          }
-          if (sendResponse) sendResponse(response);
-        });
-      } else {
-        console.warn("ABT: No active tab found to relay message");
-      }
-    });
-    return true; // Keep channel open for async response
+        if (targetTab) {
+          chrome.tabs.sendMessage(targetTab.id, message, (response) => {
+            if (chrome.runtime.lastError) {
+              chrome.scripting.executeScript({
+                target: { tabId: targetTab.id },
+                files: ['engine/abt-engine.js']
+              }).then(() => {
+                setTimeout(() => chrome.tabs.sendMessage(targetTab.id, message), 200);
+              });
+            }
+            if (sendResponse) sendResponse(response);
+          });
+        } else if (queryOptions.windowId) {
+          // Fallback to global active tab if window-specific query failed
+          findAndSend({ active: true });
+        }
+      });
+    };
+
+    const options = targetWinId 
+      ? { active: true, windowId: targetWinId }
+      : { active: true, lastFocusedWindow: true };
+    
+    findAndSend(options);
+    return true; 
   }
 });
 
-// Open side panel on action click
-chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((error) => console.error(error));
+// [기본 진입점] 아이콘 클릭 시 전용 팝업 창 열기
+chrome.action.onClicked.addListener((tab) => {
+  chrome.windows.getCurrent((currentWin) => {
+    chrome.windows.create({
+      url: chrome.runtime.getURL(`sidepanel.html?mode=popup&windowId=${currentWin.id}`),
+      type: 'popup',
+      width: 800,
+      height: 950
+    });
+  });
+});

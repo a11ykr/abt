@@ -39,7 +39,7 @@ class Processor411 {
         document.body,
         "검토 필요",
         "중복된 ID 속성은 발견되지 않았습니다. W3C Nu HTML Checker 등 외부 도구를 이용해 여닫는 태그, 속성 중복 등의 마크업 오류를 확인하세요.",
-        ["Rule 811 (Manual Markup Review)"]
+        ["Rule 4.1.1 (Manual Markup Review)"]
       ));
     }
 
@@ -48,8 +48,8 @@ class Processor411 {
 
   analyze(el, duplicateId) {
     const status = "오류";
-    const message = `문서 내에 중복된 ID 속성값("${duplicateId}")이 존재합니다. ID는 문서 내에서 유일해야 스크린 리더와 폼 제어 기능이 정상 작동합니다.`;
-    const rules = ["Rule 811 (Duplicate ID)"];
+    const message = `문서 내에 중복된 ID 속성값("${duplicateId}")이 존재합니다. ID는 문서 내에서 유일해야 하며, 동일한 값을 한 번만 사용할 수 있습니다.`;
+    const rules = ["Rule 4.1.1 (Duplicate ID)"];
 
     return this.createReport(el, status, message, rules);
   }

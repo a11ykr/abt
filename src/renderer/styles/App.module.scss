@@ -363,6 +363,45 @@
   .propBody { padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; section { h4 { font-size: 10px; font-weight: 800; color: $text-d; text-transform: uppercase; margin-bottom: 0.5rem; } code { background: $bg-s; padding: 0.5rem; border-radius: 4px; display: block; font-size: 11px; color: $accent; } p { font-size: 12px; line-height: 1.6; color: $text; } } }
   .histItem { margin-bottom: 1rem; padding: 0.5rem; background: $bg-s; border-radius: 4px; span { font-size: 9px; color: $text-d; } strong { display: block; font-size: 11px; color: $text-m; margin: 2px 0; } p { font-size: 11px; margin: 0; } }
 }
+.outlineView {
+  margin-top: 0.75rem;
+  background: $bg-p;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid $border;
+  .outlineItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    &:hover { background: $bg-h; }
+    .level {
+      font-weight: 800;
+      color: $accent;
+      font-family: monospace;
+      width: 1.5rem;
+    }
+    .text {
+      color: $text-m;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    &.h1 { background: rgba(59, 130, 246, 0.1); .level { color: #3b82f6; } }
+    &.h2 { padding-left: 1rem; }
+    &.h3 { padding-left: 2rem; }
+    &.h4 { padding-left: 3rem; }
+    &.h5 { padding-left: 4rem; }
+    &.h6 { padding-left: 5rem; }
+  }
+}
 
 
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }

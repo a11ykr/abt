@@ -113,7 +113,6 @@ interface ABTStore {
   removeSession: (url: string) => void;
   clearItems: () => void;
   setProjectName: (name: string) => void;
-  setProjectName: (name: string) => void;
   setGuidelineScore: (scanId: number, gid: string, score: number) => void;
 }
 

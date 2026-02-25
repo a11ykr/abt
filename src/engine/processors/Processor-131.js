@@ -76,6 +76,25 @@ class Processor131 {
       rules.push("Rule 1.2 (Obsolete Summary)");
     }
 
+    // [단계 E] 복잡한 표의 구조적 연결 검사
+    const rowCount = table.querySelectorAll('tr').length;
+    const tdElements = table.querySelectorAll('td');
+    let maxCols = 0;
+    table.querySelectorAll('tr').forEach(tr => {
+      maxCols = Math.max(maxCols, tr.children.length);
+    });
+
+    if (rowCount > 3 && maxCols > 3 && !hasScope) {
+      const hasHeadersId = Array.from(tdElements).some(td => td.hasAttribute('headers'));
+      if (!hasHeadersId) {
+        if (status === "적절") {
+          status = "수정 권고";
+          message = "행과 열이 많은 복잡한 표입니다. 제목 셀(<th>)에 scope 속성을 제공하거나 id/headers 속성으로 데이터를 명확히 연결할 것을 권장합니다.";
+        }
+        rules.push("Rule 2.3 (Complex Table Structure)");
+      }
+    }
+
     return this.createReport(table, status, message, rules);
   }
 

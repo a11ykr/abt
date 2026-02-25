@@ -14,6 +14,11 @@ class ABTCore {
    * @param {object} processor - scan() 메서드를 가진 프로세서 객체
    */
   registerProcessor(id, processor) {
+    // KWCAG 2.2 표준 형식(1.1.1 등)이 아닌 이전 형식(613 등)의 등록 시도 차단
+    if (!/^[0-9]\.[0-9]\.[0-9]$/.test(id)) {
+      console.warn(`ABT: Blocked registration of legacy processor [${id}]. Please update to KWCAG 2.2 notation.`);
+      return;
+    }
     this.processors.set(id, processor);
     console.log(`ABT: Processor [${id}] registered.`);
   }

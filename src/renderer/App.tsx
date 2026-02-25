@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Shield, Info, Search, Edit3, Clock, ChevronRight, ChevronDown, ChevronLeft, Filter, FileText, CheckCircle2, AlertCircle, Trash2, Folder, FolderOpen, FileCode2, RotateCcw, X, Image as ImageIcon, PlusCircle } from 'lucide-react';
+import { Shield, Info, Search, Edit3, Clock, ChevronRight, ChevronDown, ChevronLeft, Filter, FileText, CheckCircle2, AlertCircle, Trash2, Folder, FolderOpen, FileCode2, RotateCcw, X, Image as ImageIcon, PlusCircle, ExternalLink, PanelRightClose } from 'lucide-react';
 import styles from './styles/App.module.scss';
 import { useStore, kwcagHierarchy, ABTItem } from './store/useStore';
 
@@ -24,15 +24,42 @@ const App = () => {
   const [currentTabInfo, setCurrentTabInfo] = useState<{url: string, title: string} | null>(null);
   const [isManualDashboard, setIsManualDashboard] = useState(false);
   const [lastTriggeredScanTime, setLastTriggeredScanTime] = useState<number>(0);
+  const [isAuditing, setIsAuditing] = useState(false);
+  
+  const isPopup = useMemo(() => new URLSearchParams(window.location.search).get('mode') === 'popup', []);
+  const sourceWindowId = useMemo(() => {
+    const id = new URLSearchParams(window.location.search).get('windowId');
+    return id ? parseInt(id) : null;
+  }, []);
+
+  // 여러 창(사이드 패널, 팝업) 간의 데이터 실시간 동기화
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+
+    const storageListener = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+      if (areaName === 'local' && changes['abt-storage']) {
+        console.log("ABT: Storage changed in another window, rehydrating store...");
+        (useStore.persist as any).rehydrate();
+      }
+    };
+
+    chrome.storage.onChanged.addListener(storageListener);
+    return () => chrome.storage.onChanged.removeListener(storageListener);
+  }, []);
 
   useEffect(() => {
     const updateCurrentTab = () => {
       if (typeof chrome !== 'undefined' && chrome.tabs) {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (tabs[0]) {
+        const queryOptions = (isPopup && sourceWindowId) 
+          ? { active: true, windowId: sourceWindowId } 
+          : { active: true, lastFocusedWindow: true };
+
+        chrome.tabs.query(queryOptions, (tabs) => {
+          const validTab = tabs.find(t => t.url && !t.url.startsWith('chrome-extension://')) || tabs[0];
+          if (validTab) {
             setCurrentTabInfo({
-              url: tabs[0].url || "",
-              title: tabs[0].title || ""
+              url: validTab.url || "",
+              title: validTab.title || ""
             });
           }
         });
@@ -57,19 +84,39 @@ const App = () => {
         chrome.tabs.onActivated.removeListener(activeListener);
       };
     }
-  }, []);
+  }, [isPopup, sourceWindowId]);
 
   const handleStartAudit = () => {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      console.log("ABT: Start Audit Button Clicked");
-      chrome.runtime.sendMessage({ type: 'RUN_AUDIT' });
+      setIsAuditing(true);
+      setLastTriggeredScanTime(Date.now());
+      
+      chrome.runtime.sendMessage({ 
+        type: 'RUN_AUDIT', 
+        windowId: isPopup ? sourceWindowId : null 
+      });
+
+      setTimeout(() => setIsAuditing(false), 10000);
     }
   };
 
   const sessions = useMemo(() => {
     const map = new Map<number, any>();
+    let currentOrigin: string | null = null;
+    try {
+      if (currentTabInfo?.url) {
+        currentOrigin = new URL(currentTabInfo.url).origin;
+      }
+    } catch (e) {}
+
     [...items].reverse().forEach(item => {
       const scanId = item.pageInfo?.scanId || 0;
+      const url = item.pageInfo?.url || "Unknown URL";
+      try {
+        const itemOrigin = new URL(url).origin;
+        if (currentOrigin && itemOrigin !== currentOrigin) return;
+      } catch (e) {}
+
       if (!map.has(scanId)) {
         map.set(scanId, item.pageInfo || {
           url: "Unknown URL",
@@ -80,7 +127,7 @@ const App = () => {
       }
     });
     return Array.from(map.values()).sort((a, b) => b.scanId - a.scanId);
-  }, [items]);
+  }, [items, currentTabInfo?.url]);
 
   useEffect(() => {
     if (!currentTabInfo?.url) return;
@@ -93,10 +140,11 @@ const App = () => {
       if (!selectedSessionId && !isManualDashboard && lastTriggeredScanTime === 0) {
         setSelectedSessionId(latestSessionForUrl.scanId);
       }
-      else if (lastTriggeredScanTime > 0 && sessionTime > lastTriggeredScanTime) {
+      else if (lastTriggeredScanTime > 0 && sessionTime > lastTriggeredScanTime - 1000) {
         setSelectedSessionId(latestSessionForUrl.scanId);
         setIsManualDashboard(false);
         setLastTriggeredScanTime(0);
+        setIsAuditing(false);
       }
     }
   }, [currentTabInfo?.url, sessions, selectedSessionId, isManualDashboard, lastTriggeredScanTime]);
@@ -116,7 +164,7 @@ const App = () => {
       const found = group.items.find(item => item.id === id);
       if (found) return found.label;
     }
-    return guidelineNames[id] || id;
+    return id;
   };
 
   useEffect(() => {
@@ -125,7 +173,6 @@ const App = () => {
     const port = chrome.runtime.connect({ name: 'abt-sidepanel' });
     const extensionListener = (message: any) => {
       if (message.type === 'UPDATE_ABT_LIST') {
-        console.log("ABT DEBUG: Data received via Extension:", message.data);
         setIsConnected(true);
         addReport(message.data);
       }
@@ -211,15 +258,15 @@ const App = () => {
   const generateMarkdownReport = async () => {
     const date = new Date().toLocaleDateString();
     let md = `# 🛡️ ABT 접근성 진단 리포트 (${date})\n\n`;
-    const fails = items.filter(i => i.currentStatus === '오류').length;
-    const inapps = items.filter(i => i.currentStatus === '부적절').length;
-    const recs = items.filter(i => i.currentStatus === '수정 권고').length;
+    const fails = sessionItems.filter(i => i.currentStatus === '오류').length;
+    const inapps = sessionItems.filter(i => i.currentStatus === '부적절').length;
+    const recs = sessionItems.filter(i => i.currentStatus === '수정 권고').length;
     md += `## 📊 진단 요약\n- **❌ 오류:** ${fails}건\n- **🚫 부적절:** ${inapps}건\n- **⚠️ 수정 권고:** ${recs}건\n\n---\n\n`;
 
-    const activeGuidelines = Array.from(new Set(items.filter(i => i.currentStatus !== '적절').map(i => i.guideline_id)));
+    const activeGuidelines = Array.from(new Set(sessionItems.filter(i => i.currentStatus !== '적절').map(i => i.guideline_id)));
     activeGuidelines.forEach(gid => {
       md += `## 📘 ${getGuidelineName(gid)}\n\n`;
-      const gidItems = items.filter(i => i.guideline_id === gid && i.currentStatus !== '적절');
+      const gidItems = sessionItems.filter(i => i.guideline_id === gid && i.currentStatus !== '적절');
       gidItems.forEach(item => {
         const statusIcon = item.currentStatus === '오류' ? '❌' : item.currentStatus === '부적절' ? '🚫' : '⚠️';
         md += `### ${statusIcon} [${item.currentStatus}] ${item.elementInfo.selector}\n`;
@@ -255,10 +302,15 @@ const App = () => {
     });
   };
 
-  const selectedItem = items.find(i => i.id === selectedId);
   const handleLocate = (selector: string) => {
-    chrome.runtime.sendMessage({ type: 'locate-element', selector });
+    chrome.runtime.sendMessage({ 
+      type: 'locate-element', 
+      selector,
+      windowId: isPopup ? sourceWindowId : null
+    });
   };
+
+  const selectedItem = items.find(i => i.id === selectedId);
 
   return (
     <div className={styles.container}>
@@ -267,11 +319,53 @@ const App = () => {
           <Shield size={18} className={styles.logo} />
           <div className={styles.titleInfo}>
             <h1>ABT Auditor</h1>
-            <span>Extension</span>
+            <span>{isPopup ? 'Window' : 'Extension'}</span>
           </div>
         </div>
         <div className={styles.headerActions}>
           <button onClick={() => { setSelectedSessionId(null); setIsManualDashboard(true); }} title="새 진단" className={styles.iconBtn}><PlusCircle size={16} /></button>
+          
+          {isPopup ? (
+            <button 
+              onClick={() => {
+                if (typeof chrome !== 'undefined' && chrome.sidePanel) {
+                  const targetWinId = sourceWindowId || chrome.windows.WINDOW_ID_CURRENT;
+                  (chrome as any).sidePanel.open({ windowId: targetWinId }, () => {
+                    window.close();
+                  });
+                }
+              }} 
+              title="사이드 패널로 돌리기" 
+              className={styles.iconBtn}
+            >
+              <PanelRightClose size={16} />
+            </button>
+          ) : (
+            <button 
+              onClick={() => {
+                if (typeof chrome !== 'undefined' && chrome.windows) {
+                  chrome.windows.getCurrent((currentWin) => {
+                    const winId = currentWin.id;
+                    chrome.windows.create({
+                      url: chrome.runtime.getURL(`sidepanel.html?mode=popup&windowId=${winId}`),
+                      type: 'popup',
+                      width: 750,
+                      height: 900
+                    });
+                    
+                    if (winId) {
+                      chrome.runtime.sendMessage({ type: 'POP_OUT', windowId: winId });
+                    }
+                  });
+                }
+              }} 
+              title="창 분리하기" 
+              className={styles.iconBtn}
+            >
+              <ExternalLink size={16} />
+            </button>
+          )}
+
           <button onClick={clearItems} title="전체 삭제" className={styles.iconBtn}><Trash2 size={16} /></button>
           <button onClick={generateMarkdownReport} title="리포트 추출" className={`${styles.iconBtn} ${copyStatus ? styles.success : ''}`}><FileText size={16} /></button>
         </div>
@@ -289,8 +383,12 @@ const App = () => {
                 <span className={styles.pageUrl}>{currentTabInfo.url}</span>
               </div>
             )}
-            <button className={styles.startBtn} onClick={() => { setLastTriggeredScanTime(Date.now()); handleStartAudit(); }}>
-              진단 시작 (Start Audit)
+            <button 
+              className={`${styles.startBtn} ${isAuditing ? styles.loading : ''}`} 
+              onClick={handleStartAudit}
+              disabled={isAuditing}
+            >
+              {isAuditing ? '진단 중...' : '진단 시작 (Start Audit)'}
             </button>
             {sessions.length > 0 && (
               <div className={styles.historyOption}>
@@ -347,7 +445,7 @@ const App = () => {
                       {(() => {
                         const total = group.items.length;
                         const manualScore = total > 0 ? group.items[0].manualScore : undefined;
-                        // 1. 수동 입력 점수가 있으면 최우선 적용
+
                         if (manualScore !== undefined) {
                           return (
                             <span 
@@ -364,7 +462,6 @@ const App = () => {
                           );
                         }
 
-                        // 2. 항목이 없으면 N/A
                         if (total === 0) return (
                           <span 
                             className={styles.naBadge}
@@ -377,11 +474,10 @@ const App = () => {
                           </span>
                         );
 
-                        // 3. 통계 계산 (상태별 카운트)
                         const pass = group.items.filter(i => i.currentStatus === '적절').length;
                         const fail = group.items.filter(i => ['오류', '부적절'].includes(i.currentStatus)).length;
-                          const review = group.items.filter(i => ['검토 필요', '수정 권고'].includes(i.currentStatus)).length;
-                        // 4. 수동 검사 필요 상태 판별 (오류가 없는데 미판정 항목이 있는 경우)
+                        const review = group.items.filter(i => ['검토 필요', '수정 권고'].includes(i.currentStatus)).length;
+                        
                         if (fail === 0 && review > 0 && group.items.some(i => i.currentStatus === '검토 필요')) {
                           return (
                             <span 
@@ -398,17 +494,14 @@ const App = () => {
                           );
                         }
 
-                        // 5. 점수 산정 모델 적용
                         let score = 100;
-                        const exhaustiveGids = ['1.1.1', '1.3.1', '2.1.1', '2.4.3', '2.5.3', '3.3.2'];
+                        const exhaustiveGids = ['1.1.1', '1.3.1', '2.1.1', '2.4.2', '2.4.3', '2.5.3', '3.3.2'];
+                        
                         if (exhaustiveGids.includes(group.gid)) {
-                          // 전수 조사 비율 모델
                           score = Math.round(((pass * 100 + review * 50) / (total * 100)) * 100);
                         } else {
-                          // 비선형 감쇄 모델 (Exponential Decay)
                           const rawScore = 100 * Math.pow(0.8, fail) * Math.pow(0.95, review);
                           score = Math.round(rawScore);
-                          // 전수 조사 대상이 아니더라도 발견된 모든 항목이 적절이면 100점
                           if (total > 0 && pass === total) score = 100;
                         }
 
@@ -463,7 +556,18 @@ const App = () => {
                                       <span className={styles.highlight}>[{((item.elementInfo as any).sourceAttr || 'alt')}="{item.elementInfo.alt || ''}"]</span>
                                       <span>{item.context.smartContext.split(item.elementInfo.alt || "")[1]}...</span>
                                     </>
-                                  ) : (<span>"{item.context.smartContext}"</span>)}
+                                  ) : item.guideline_id === '1.3.2' && item.elementInfo.selector === 'outline' ? (
+                                    <div className={styles.outlineView}>
+                                      {(item.context as any).outline?.map((h: any, idx: number) => (
+                                        <div key={idx} className={`${styles.outlineItem} ${styles['h'+h.level]}`}>
+                                          <span className={styles.level}>H{h.level}</span>
+                                          <span className={styles.text}>{h.text || '(텍스트 없음)'}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span>"{item.context.smartContext}"</span>
+                                  )}
                                 </div>
                                 <div className={styles.miniActions}>
                                   <button onClick={(e) => { e.stopPropagation(); setJudgingId(item.id); setTempComment(item.finalComment); }}>판정</button>
@@ -523,4 +627,5 @@ const App = () => {
     </div>
   );
 };
+
 export default App;
