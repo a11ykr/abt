@@ -1,0 +1,19 @@
+// Shortcut mappings for CSS variables
+$bg-p: var(--bg-primary);
+$bg-s: var(--bg-secondary);
+$bg-h: var(--bg-hover);
+
+$text: var(--text-main);
+$text-m: var(--text-muted);
+$text-d: var(--text-dim);
+
+$border: var(--border-color);
+$accent: var(--accent-blue);
+
+$fail: var(--accent-fail);
+$pass: var(--accent-pass);
+$warn: var(--accent-warning);
+$review: var(--accent-review);
+
+$selected: var(--card-selected-bg);
+$shadow: var(--shadow-color);

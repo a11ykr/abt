@@ -347,7 +347,7 @@ const App = () => {
                       {(() => {
                         const total = group.items.length;
                         const manualScore = total > 0 ? group.items[0].manualScore : undefined;
-
+                        // 1. 수동 입력 점수가 있으면 최우선 적용
                         if (manualScore !== undefined) {
                           return (
                             <span 
@@ -364,6 +364,7 @@ const App = () => {
                           );
                         }
 
+                        // 2. 항목이 없으면 N/A
                         if (total === 0) return (
                           <span 
                             className={styles.naBadge}
@@ -376,10 +377,12 @@ const App = () => {
                           </span>
                         );
 
-                        const review = group.items.filter(i => i.currentStatus === '검토 필요').length;
-                        const fail = group.items.filter(i => i.currentStatus === '오류').length;
-                        
-                        if (fail === 0 && review > 0) {
+                        // 3. 통계 계산 (상태별 카운트)
+                        const pass = group.items.filter(i => i.currentStatus === '적절').length;
+                        const fail = group.items.filter(i => ['오류', '부적절'].includes(i.currentStatus)).length;
+                          const review = group.items.filter(i => ['검토 필요', '수정 권고'].includes(i.currentStatus)).length;
+                        // 4. 수동 검사 필요 상태 판별 (오류가 없는데 미판정 항목이 있는 경우)
+                        if (fail === 0 && review > 0 && group.items.some(i => i.currentStatus === '검토 필요')) {
                           return (
                             <span 
                               className={`${styles.scoreBadge} ${styles.manual}`}
@@ -395,31 +398,33 @@ const App = () => {
                           );
                         }
 
-                        const pass = group.items.filter(i => i.currentStatus === '적절').length;
+                        // 5. 점수 산정 모델 적용
                         let score = 100;
                         const exhaustiveGids = ['1.1.1', '1.3.1', '2.1.1', '2.4.3', '2.5.3', '3.3.2'];
-                        
                         if (exhaustiveGids.includes(group.gid)) {
+                          // 전수 조사 비율 모델
                           score = Math.round(((pass * 100 + review * 50) / (total * 100)) * 100);
                         } else {
+                          // 비선형 감쇄 모델 (Exponential Decay)
                           const rawScore = 100 * Math.pow(0.8, fail) * Math.pow(0.95, review);
                           score = Math.round(rawScore);
+                          // 전수 조사 대상이 아니더라도 발견된 모든 항목이 적절이면 100점
                           if (total > 0 && pass === total) score = 100;
                         }
 
                         return (
-                            <span 
-                              className={`${styles.scoreBadge} ${score < 60 ? styles.bad : score < 90 ? styles.warning : styles.good}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const val = prompt("점수 직접 수정 (0-100):", score.toString());
-                                if (val !== null && selectedSessionId) setGuidelineScore(selectedSessionId, group.gid, parseInt(val));
-                              }}
-                              title="클릭하여 점수를 직접 수정할 수 있습니다."
-                            >
-                              {score}점
-                            </span>
-                            );
+                          <span 
+                            className={`${styles.scoreBadge} ${score < 60 ? styles.bad : score < 90 ? styles.warning : styles.good}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const val = prompt("점수 직접 수정 (0-100):", score.toString());
+                              if (val !== null && selectedSessionId) setGuidelineScore(selectedSessionId, group.gid, parseInt(val));
+                            }}
+                            title="클릭하여 점수를 직접 수정할 수 있습니다."
+                          >
+                            {score}점
+                          </span>
+                        );
                       })()}
                       <span className={styles.countBadge}>{group.items.length}</span>
                     </div>
