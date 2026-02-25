@@ -1,6 +1,6 @@
 /**
- * ABT Processor 533 (Providing Instructions)
- * 5.3.3 명확한 지시사항 제공 지침 진단 프로세서
+ * ABT Processor 133 (Providing Instructions)
+ * KWCAG 2.2 지침 1.3.3 명확한 지시사항 제공 지침 진단 프로세서
  */
 class Processor133 {
   constructor() {
@@ -13,6 +13,11 @@ class Processor133 {
       "빨간", "파란", "노란", "초록", "검정", "흰색", "색상",
       "큰", "작은", "대형", "소형", "사이즈",
       "소리", "신호음", "비프", "벨", "음성"
+    ];
+    // 지시사항(명령/안내)과 관련된 키워드들
+    this.instructionKeywords = [
+      "버튼", "링크", "아이콘", "메뉴", "항목", "탭",
+      "클릭", "누르", "선택", "참조", "확인", "사용"
     ];
   }
 
@@ -30,10 +35,24 @@ class Processor133 {
 
       if (!directText) continue;
 
-      const foundKeywords = this.sensoryKeywords.filter(k => directText.includes(k));
+      // 정교한 키워드 매칭 (단순 포함이 아닌 독립적 의미 확인)
+      const foundKeywords = this.sensoryKeywords.filter(k => {
+        // 1글자 키워드(위, 옆 등)는 앞뒤에 공백이나 문장 부호가 있을 때만 매칭하여 false positive 방지
+        if (k.length === 1) {
+          const regex = new RegExp(`(^|\\s|[.,!?;:])[${k}]($|\\s|[.,!?;:])`);
+          return regex.test(directText);
+        }
+        // 2글자 이상은 그대로 포함 여부 확인
+        return directText.includes(k);
+      });
 
       if (foundKeywords.length > 0) {
-        reports.push(this.createReport(el, "검토 필요", `지시사항에 시각적/감각적 표현('${foundKeywords.join(', ')}')이 포함되어 있습니다. 특정 감각에만 의존하여 정보를 전달하고 있지 않은지 확인하세요.`));
+        // 지시사항 관련 키워드가 함께 존재하는지 확인 (단순 단어 포함 여부보다 안내 문구로서의 성격 강화)
+        const hasInstruction = this.instructionKeywords.some(k => directText.includes(k));
+        
+        if (hasInstruction) {
+          reports.push(this.createReport(el, "검토 필요", `지시사항에 시각적/감각적 표현('${foundKeywords.join(', ')}')이 안내 키워드와 함께 포함되어 있습니다. 특정 감각에만 의존하지 않는지 확인하세요.`));
+        }
       }
     }
 

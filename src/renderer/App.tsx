@@ -357,6 +357,7 @@ const App = () => {
                                 const val = prompt("점수 입력 (0-100):", manualScore.toString());
                                 if (val !== null && selectedSessionId) setGuidelineScore(selectedSessionId, group.gid, parseInt(val));
                               }}
+                              title="클릭하여 점수를 수정할 수 있습니다."
                             >
                               {manualScore}점 (수동)
                             </span>
@@ -387,6 +388,7 @@ const App = () => {
                                 const val = prompt("수동 검사 점수 입력 (0-100):");
                                 if (val !== null && selectedSessionId) setGuidelineScore(selectedSessionId, group.gid, parseInt(val));
                               }}
+                              title="자동 진단이 어려운 항목입니다. 클릭하여 직접 점수를 입력하세요."
                             >
                               수동 검사 필요
                             </span>
@@ -406,17 +408,18 @@ const App = () => {
                         }
 
                         return (
-                          <span 
-                            className={`${styles.scoreBadge} ${score < 60 ? styles.bad : score < 90 ? styles.warning : styles.good}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const val = prompt("점수 직접 수정 (0-100):", score.toString());
-                              if (val !== null && selectedSessionId) setGuidelineScore(selectedSessionId, group.gid, parseInt(val));
-                            }}
-                          >
-                            {score}점
-                          </span>
-                        );
+                            <span 
+                              className={`${styles.scoreBadge} ${score < 60 ? styles.bad : score < 90 ? styles.warning : styles.good}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const val = prompt("점수 직접 수정 (0-100):", score.toString());
+                                if (val !== null && selectedSessionId) setGuidelineScore(selectedSessionId, group.gid, parseInt(val));
+                              }}
+                              title="클릭하여 점수를 직접 수정할 수 있습니다."
+                            >
+                              {score}점
+                            </span>
+                            );
                       })()}
                       <span className={styles.countBadge}>{group.items.length}</span>
                     </div>
