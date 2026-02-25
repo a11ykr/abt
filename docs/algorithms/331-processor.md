@@ -1,7 +1,8 @@
-# ABT-7.3.1-Processor: 오류 정정 알고리즘 v1.2
+# ABT-3.3.1-Processor: 오류 정정 v0.10
 
-### 🔗 KWCAG 2.2 Reference
-- **7.3.1 (오류 정정)**: 입력 오류를 정정할 수 있는 방법을 제공해야 한다.
+### 🔗 References
+- KWCAG 2.2: 3.3.1 오류 정정
+- WCAG 2.2: 3.3.1 Error Identification (A) (Reference)
 
 ---
 

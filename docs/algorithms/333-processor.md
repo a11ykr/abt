@@ -1,7 +1,8 @@
-# ABT-7.3.3-Processor: 접근 가능한 인증 알고리즘 v1.0
+# ABT-3.3.3-Processor: 접근 가능한 인증 v0.10
 
-### 🔗 KWCAG 2.2 Reference
-- **7.3.3 (접근 가능한 인증)**: 인증 과정은 인지 기능 테스트에만 의존해서는 안 된다.
+### 🔗 References
+- KWCAG 2.2: 3.3.3 접근 가능한 인증
+- WCAG 2.2: 3.3.7 Accessible Authentication (Minimum) (AA) (Reference)
 
 ---
 

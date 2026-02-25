@@ -1,6 +1,10 @@
-# ABT-1.1.1-Processor: 적절한 대체 텍스트 제공 알고리즘 v1.1
+# ABT-1.1.1-Processor: 적절한 대체 텍스트 제공 v0.11
 
-이 알고리즘은 WCAG/KWCAG 5.1.1 지침을 준수하며, 기존 자동화 도구(axe-core 등)가 놓치는 **'맥락적 적절성'**과 **'정성적 품질'**을 판별하는 데 집중한다.
+### 🔗 References
+- KWCAG 2.2: 1.1.1 적절한 대체 텍스트 제공
+- WCAG 2.2: 1.1.1 Non-text Content (A) (Reference)
+
+---
 
 ## 1. 데이터 수집 단계 (Data Collection)
 대상 요소(`img`, `role="img"`, `svg` 등)를 발견하면 다음 정보를 수집한다.

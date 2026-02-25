@@ -1,6 +1,6 @@
 /**
- * ABT Processor 654
- * KWCAG 2.2 지침 2.5.4 오류 정정 (Error Correction)
+ * ABT Processor 254 (Motion Actuation)
+ * KWCAG 2.2 지침 2.5.4 동작기반 작동 (Motion Actuation)
  */
 class Processor254 {
   constructor() {
@@ -11,72 +11,47 @@ class Processor254 {
   async scan() {
     const reports = [];
     
-    // Check forms that might require error correction (has required inputs)
-    const forms = document.querySelectorAll('form');
-    
-    for (const form of forms) {
-      if (this.utils.isHidden(form)) continue;
-      
-      const requiredInputs = form.querySelectorAll('input[required], select[required], textarea[required], [aria-required="true"]');
-      if (requiredInputs.length > 0) {
-        reports.push(this.analyze(form, requiredInputs.length));
+    // Check for potential motion event usage (difficult to detect listeners directly in content script,
+    // so we look for keywords in source or just provide a manual check prompt if the page seems complex)
+    const scriptTags = document.querySelectorAll('script');
+    let potentialMotion = false;
+    for (const script of scriptTags) {
+      if (script.textContent.includes('devicemotion') || script.textContent.includes('deviceorientation')) {
+        potentialMotion = true;
+        break;
       }
     }
 
-    // If no forms found, we still add a manual review for custom input widgets
-    if (reports.length === 0) {
-      reports.push(this.createReport(
-        document.body,
-        "검토 필요",
-        "서식(form) 요소는 없으나 입력 위젯이 있다면, 입력 오류 발생 시 그 원인과 정정 방법을 사용자에게 명확히 알려주는지 수동으로 검토하세요.",
-        ["Rule 654 (Manual Review)"],
-        "없음"
-      ));
+    if (potentialMotion) {
+      reports.push({
+        guideline_id: this.id,
+        elementInfo: { tagName: "WINDOW", selector: "window" },
+        context: { smartContext: "기기 동작(Motion/Orientation) 관련 스크립트가 탐지되었습니다." },
+        result: { 
+          status: "검토 필요", 
+          message: "흔들기, 기울이기 등 기기의 동작을 통해 기능을 수행하는 경우, 정적인 입력(클릭 등)으로도 해당 기능을 수행할 수 있는 대체 수단이 있는지 확인하세요.",
+          rules: ["Rule 2.5.4 (Motion Events Detected)"]
+        },
+        currentStatus: "검토 필요",
+        history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "동작 기반 이벤트 사용 의심" }]
+      });
+    } else {
+      // General reminder for this AAA-level/2.2 guideline
+      reports.push({
+        guideline_id: this.id,
+        elementInfo: { tagName: "document", selector: "body" },
+        context: { smartContext: "기기 동작 센서 사용 여부 검토" },
+        result: { 
+          status: "적절", 
+          message: "페이지 내에서 기기의 흔들기나 기울이기 등 동작에 의존하는 특수 기능이 탐지되지 않았습니다.",
+          rules: ["Rule 2.5.4 (No Motion Actuation)"]
+        },
+        currentStatus: "적절",
+        history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "특이 사항 없음" }]
+      });
     }
 
     return reports;
-  }
-
-  analyze(el, reqCount) {
-    let status = "검토 필요";
-    let message = `필수 입력 항목이 포함된 서식(form)입니다. (필수 항목 ${reqCount}개). 폼 제출 시 오류가 발생하면, 오류의 위치와 원인을 텍스트로 명확히 안내하는지 수동 검토가 필요합니다.`;
-    const rules = ["Rule 654 (Form Error Correction)"];
-
-    // Check for aria-invalid on inputs to see if they use ARIA error handling
-    const invalidInputs = el.querySelectorAll('[aria-invalid="true"]');
-    if (invalidInputs.length > 0) {
-      let hasErrorDesc = true;
-      invalidInputs.forEach(input => {
-        if (!input.hasAttribute('aria-describedby') && !input.hasAttribute('aria-errormessage')) {
-          hasErrorDesc = false;
-        }
-      });
-
-      if (!hasErrorDesc) {
-        status = "오류";
-        message = "aria-invalid='true'로 오류 상태가 표시된 항목 중, 구체적인 오류 메시지(aria-errormessage 등)가 연결되지 않은 항목이 있습니다.";
-        rules.push("Rule 654 (Missing Error Message)");
-      } else {
-        status = "적절"; // Or mostly acceptable
-        message = "오류 상태(aria-invalid)와 오류 메시지가 적절하게 ARIA 속성으로 연결되어 있습니다.";
-      }
-    }
-
-    return this.createReport(el, status, message, rules, `Required inputs: ${reqCount}`);
-  }
-
-  createReport(el, status, message, rules, ctxInfo) {
-    return {
-      guideline_id: this.id,
-      elementInfo: {
-        tagName: el.tagName,
-        selector: el !== document.body ? this.utils.getSelector(el) : "body"
-      },
-      context: { smartContext: ctxInfo },
-      result: { status, message, rules },
-      currentStatus: status,
-      history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: message }]
-    };
   }
 }
 

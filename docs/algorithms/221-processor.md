@@ -1,7 +1,8 @@
-# ABT-6.2.1-Processor: 응답시간 조절 알고리즘 v1.0
+# ABT-2.2.1-Processor: 응답시간 조절 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.2.1 Timing Adjustable (Level A)**: For each time limit that is set by the content, the user is allowed to turn off, adjust, or extend the limit.
+### 🔗 References
+- KWCAG 2.2: 2.2.1 응답시간 조절
+- WCAG 2.2: 2.2.1 Timing Adjustable (A) (Reference)
 
 ---
 

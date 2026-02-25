@@ -1,10 +1,8 @@
-# ABT-6.1.2-Processor: 초점 이동과 표시 알고리즘 v1.0
+# ABT-2.1.2-Processor: 초점 이동과 표시 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.4.1 Bypass Blocks (Level A)**: A mechanism is available to bypass blocks of content that are repeated on multiple Web pages.
-- **SC 2.4.3 Focus Order (Level A)**: Focusable components receive focus in an order that preserves meaning and operability.
-- **SC 2.4.7 Focus Visible (Level AA)**: Keyboard focus indicator is visible.
-- **SC 2.4.11 Focus Appearance (Minimum) (Level AA)**: Focus indicators have sufficient contrast (3:1).
+### 🔗 References
+- KWCAG 2.2: 2.1.2 초점 이동과 표시
+- WCAG 2.2: 2.4.3 Focus Order (A) (Reference)
 
 ---
 

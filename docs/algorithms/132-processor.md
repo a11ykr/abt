@@ -1,7 +1,8 @@
-# ABT-1.3.2-Processor: 콘텐츠의 선형구조 알고리즘 v1.1
+# ABT-1.3.2-Processor: 콘텐츠의 선형구조 v0.11
 
-### 🔗 KWCAG 2.2 Reference
-- **1.3.2 (의미 있는 콘텐츠 순서)**: 콘텐츠는 논리적인 순서로 제공되어야 한다.
+### 🔗 References
+- KWCAG 2.2: 1.3.2 콘텐츠의 선형구조
+- WCAG 2.2: 1.3.2 Meaningful Sequence (A) (Reference)
 
 ---
 

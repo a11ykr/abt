@@ -1,7 +1,8 @@
-# ABT-6.3.1-Processor: 깜빡임과 번쩍임 사용 제한 알고리즘 v1.0
+# ABT-2.3.1-Processor: 깜빡임과 번쩍임 사용 제한 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.3.1 Three Flashes or Below Threshold (Level A)**: Web pages do not contain anything that flashes more than three times in any one second period, or the flash is below the general flash and red flash thresholds.
+### 🔗 References
+- KWCAG 2.2: 2.3.1 깜빡임과 번쩍임 사용 제한
+- WCAG 2.2: 2.3.1 Three Flashes or Below Threshold (A) (Reference)
 
 ---
 

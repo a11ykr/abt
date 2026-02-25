@@ -1,6 +1,10 @@
-# ABT-1.3.3-Processor: 명확한 지시사항 제공 알고리즘 v1.2
+# ABT-1.3.3-Processor: 명확한 지시사항 제공 v0.12
 
-이 알고리즘은 지침 1.3.3(감각적 특징)을 준수하며, 모양, 크기, 위치, 소리 등 감각적 정보에만 의존하여 안내하고 있는지 진단한다.
+### 🔗 References
+- KWCAG 2.2: 1.3.3 명확한 지시사항 제공
+- WCAG 2.2: 1.3.3 Sensory Characteristics (A) (Reference)
+
+---
 
 ## 1. 데이터 수집 단계 (Data Collection)
 - **Text Analysis:** `aria-label`, `alt`, 일반 텍스트 노드 콘텐츠.

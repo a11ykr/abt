@@ -1,7 +1,8 @@
-# ABT-6.4.3-Processor: 적절한 링크 텍스트 알고리즘 v1.0
+# ABT-2.4.3-Processor: 적절한 링크 텍스트 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.4.4 Link Purpose (In Context) (Level A)**: The purpose of each link can be determined from the link text alone or from the link text together with its programmatically determined link context.
+### 🔗 References
+- KWCAG 2.2: 2.4.3 적절한 링크 텍스트
+- WCAG 2.2: 2.4.4 Link Purpose (In Context) (A) (Reference)
 
 ---
 

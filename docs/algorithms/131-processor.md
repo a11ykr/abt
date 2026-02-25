@@ -1,7 +1,8 @@
-# ABT-5.3.1-Processor: 표의 구성 알고리즘 v1.0
+# ABT-1.3.1-Processor: 표의 구성 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 1.3.1 Info and Relationships (Level A)**: Information, structure, and relationships conveyed through presentation can be programmatically determined or are available in text.
+### 🔗 References
+- KWCAG 2.2: 1.3.1 표의 구성
+- WCAG 2.2: 1.3.1 Info and Relationships (A) (Reference)
 
 ---
 

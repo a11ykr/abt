@@ -1,7 +1,8 @@
-# ABT-6.5.2-Processor: 포인터 입력 취소 알고리즘 v1.0
+# ABT-2.5.2-Processor: 포인터 입력 취소 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.5.2 Pointer Cancellation (Level A)**: For functionality that can be operated using a single pointer, at least one of the following is true: No Down-Event, Abort or Undo, Up-Reversal, Essential.
+### 🔗 References
+- KWCAG 2.2: 2.5.2 포인터 입력 취소
+- WCAG 2.2: 2.5.2 Pointer Cancellation (A) (Reference)
 
 ---
 

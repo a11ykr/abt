@@ -1,7 +1,8 @@
-# ABT-6.1.4-Processor: 문자 단축키 알고리즘 v1.0
+# ABT-2.1.4-Processor: 문자 단축키 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.1.4 Character Key Shortcuts (Level A)**: If a keyboard shortcut is implemented using only printable character keys, then at least one of the following is true: (1) Turn off, (2) Remap, (3) Active only on focus.
+### 🔗 References
+- KWCAG 2.2: 2.1.4 문자 단축키
+- WCAG 2.2: 2.1.4 Character Key Shortcuts (A) (Reference)
 
 ---
 

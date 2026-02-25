@@ -33,10 +33,20 @@ class Processor211 {
     const tabindex = parseInt(el.getAttribute('tabindex') || '0', 10);
     const role = el.getAttribute('role');
     const isInteractiveTag = this.interactiveTags.includes(tagName);
+    const ariaModal = el.getAttribute('aria-modal') === 'true';
 
-    // [케이스 A] 비표준 대화형 요소 (div, span 등에 클릭 이벤트가 있으나 키보드 접근 불가)
+    // [케이스 D] 모달 대화상자 탐지 (키보드 트랩 및 초점 가둠 검토)
+    if (role === 'dialog' || role === 'alertdialog' || ariaModal) {
+      return this.createReport(el, "검토 필요", "모달 대화상자가 탐지되었습니다. 키보드 초점이 모달 내부에 갇히는지(Focus Trap), Esc 키로 닫을 수 있는지, 그리고 닫힌 후 초점이 이전 위치로 복귀하는지 수동으로 검토하세요.");
+    }
+
     if (!isInteractiveTag && hasClick && !hasTabindex && !['presentation', 'none'].includes(role)) {
-      return this.createReport(el, "오류", "요소에 클릭 이벤트가 있으나 키보드 포커스(tabindex)가 제공되지 않았습니다. 키보드 사용자가 접근할 수 없습니다.");
+      return this.createReport(el, "오류", "요소에 클릭 이벤트가 있으나 키보드 포커스(tabindex)가 제공되지 않았습니다. 키보드만 사용하는 사용자는 이 기능을 실행할 수 없습니다.");
+    }
+
+    // [케이스 A-2] 비표준 대화형 요소인데 role이 누락된 경우 (의미 전달 결함)
+    if (!isInteractiveTag && hasClick && hasTabindex && !role) {
+      return this.createReport(el, "수정 권고", "키보드로 접근은 가능하나, 요소의 역할(role='button' 등)이 명시되지 않았습니다. 스크린 리더 사용자를 위해 적절한 role 속성 추가를 권장합니다.");
     }
 
     // [케이스 B] 대화형 요소인데 tabindex="-1"로 포커스가 차단된 경우

@@ -1,7 +1,8 @@
-# ABT-6.4.1-Processor: 반복 영역 건너뛰기 알고리즘 v1.0
+# ABT-2.4.1-Processor: 반복 영역 건너뛰기 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.4.1 Bypass Blocks (Level A)**: A mechanism is available to bypass blocks of content that are repeated on multiple Web pages.
+### 🔗 References
+- KWCAG 2.2: 2.4.1 반복 영역 건너뛰기
+- WCAG 2.2: 2.4.1 Bypass Blocks (A) (Reference)
 
 ---
 

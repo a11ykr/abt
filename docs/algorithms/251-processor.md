@@ -1,7 +1,8 @@
-# ABT-6.5.1-Processor: 단일 포인터 입력 지원 알고리즘 v1.0
+# ABT-2.5.1-Processor: 단일 포인터 입력 지원 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.5.1 Pointer Gestures (Level A)**: All functionality that uses multipoint or path-based gestures for operation can be operated with a single pointer without a path-based gesture.
+### 🔗 References
+- KWCAG 2.2: 2.5.1 단일 포인터 입력 지원
+- WCAG 2.2: 2.5.1 Pointer Gestures (A) (Reference)
 
 ---
 

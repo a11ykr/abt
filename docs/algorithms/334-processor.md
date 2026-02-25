@@ -1,7 +1,8 @@
-# ABT-7.3.4-Processor: 반복 입력 정보 알고리즘 v1.0
+# ABT-3.3.4-Processor: 반복 입력 정보 v0.10
 
-### 🔗 KWCAG 2.2 Reference
-- **7.3.4 (반복 입력 정보)**: 반복되는 입력 정보는 자동 입력 또는 선택 입력할 수 있어야 한다.
+### 🔗 References
+- KWCAG 2.2: 3.3.4 반복 입력 정보
+- WCAG 2.2: 3.3.8 Redundant Entry (A) (Reference)
 
 ---
 

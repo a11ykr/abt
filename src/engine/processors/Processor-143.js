@@ -1,6 +1,6 @@
 /**
- * ABT Processor 543 (Contrast Minimum)
- * 5.4.3 텍스트 콘텐츠의 명도 대비 지침 진단 프로세서
+ * ABT Processor 143 (Contrast Ratio)
+ * KWCAG 2.2 지침 1.4.3 텍스트 콘텐츠의 명도 대비
  */
 class Processor143 {
   constructor() {
@@ -74,7 +74,7 @@ class Processor143 {
       result: {
         status: status,
         message: message,
-        rules: ["Rule 1.1 (Contrast Ratio)"]
+        rules: ["Rule 1.4.3 (Contrast Ratio)"]
       },
       currentStatus: status,
       history: [{

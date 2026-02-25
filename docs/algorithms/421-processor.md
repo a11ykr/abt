@@ -1,7 +1,8 @@
-# ABT-8.2.1-Processor: 웹 애플리케이션 접근성 준수 알고리즘 v1.0
+# ABT-4.2.1-Processor: 웹 애플리케이션 접근성 준수 v0.10
 
-### 🔗 KWCAG 2.2 Reference
-- **8.2.1 (웹 애플리케이션 접근성 준수)**: 웹 애플리케이션이 자체 접근성을 갖추지 못했고 대체 콘텐츠도 없는 경우.
+### 🔗 References
+- KWCAG 2.2: 4.2.1 웹 애플리케이션 접근성 준수
+- WCAG 2.2: 4.1.2 Name, Role, Value (A) (Reference)
 
 ---
 

@@ -1,6 +1,6 @@
 /**
- * ABT Processor 731
- * KWCAG 2.2 지침 3.3.1 콘텐츠 간의 구분 (Content Differentiation)
+ * ABT Processor 331 (Error Identification)
+ * KWCAG 2.2 지침 3.3.1 오류 정정 (Error Identification)
  */
 class Processor331 {
   constructor() {
@@ -9,28 +9,70 @@ class Processor331 {
   }
 
   async scan() {
-    // This is primarily a visual layout check that requires manual review.
-    // We flag the document for a manual check of content blocks.
     const reports = [];
     
-    reports.push(this.createReport(
-      document.body,
-      "검토 필요",
-      "이웃한 콘텐츠 영역(예: 본문과 사이드바, 헤더와 본문 등)이 시각적으로 명확히 구분되는지 확인하세요. (테두리, 여백, 배경색 등)",
-      ["Rule 731 (Manual Visual Review)"]
-    ));
+    // Check forms that might require error correction (has required inputs)
+    const forms = document.querySelectorAll('form');
+    
+    for (const form of forms) {
+      if (this.utils.isHidden(form)) continue;
+      
+      const requiredInputs = form.querySelectorAll('input[required], select[required], textarea[required], [aria-required="true"]');
+      if (requiredInputs.length > 0) {
+        reports.push(this.analyze(form, requiredInputs.length));
+      }
+    }
+
+    // If no forms found, we still add a manual review for custom input widgets
+    if (reports.length === 0) {
+      reports.push(this.createReport(
+        document.body,
+        "검토 필요",
+        "서식(form) 요소는 없으나 입력 위젯이 있다면, 입력 오류 발생 시 그 원인과 정정 방법을 사용자에게 명확히 알려주는지 수동으로 검토하세요.",
+        ["Rule 3.3.1 (Manual Review)"],
+        "없음"
+      ));
+    }
 
     return reports;
   }
 
-  createReport(el, status, message, rules) {
+  analyze(el, reqCount) {
+    let status = "검토 필요";
+    let message = `필수 입력 항목이 포함된 서식(form)입니다. (필수 항목 ${reqCount}개). 폼 제출 시 오류가 발생하면, 오류의 위치와 원인을 텍스트로 명확히 안내하는지 수동 검토가 필요합니다.`;
+    const rules = ["Rule 3.3.1 (Form Error Identification)"];
+
+    // Check for aria-invalid on inputs to see if they use ARIA error handling
+    const invalidInputs = el.querySelectorAll('[aria-invalid="true"]');
+    if (invalidInputs.length > 0) {
+      let hasErrorDesc = true;
+      invalidInputs.forEach(input => {
+        if (!input.hasAttribute('aria-describedby') && !input.hasAttribute('aria-errormessage')) {
+          hasErrorDesc = false;
+        }
+      });
+
+      if (!hasErrorDesc) {
+        status = "오류";
+        message = "aria-invalid='true'로 오류 상태가 표시된 항목 중, 구체적인 오류 메시지(aria-errormessage 등)가 연결되지 않은 항목이 있습니다.";
+        rules.push("Rule 3.3.1 (Missing Error Message)");
+      } else {
+        status = "적절";
+        message = "오류 상태(aria-invalid)와 오류 메시지가 적절하게 ARIA 속성으로 연결되어 있습니다.";
+      }
+    }
+
+    return this.createReport(el, status, message, rules, `Required inputs: ${reqCount}`);
+  }
+
+  createReport(el, status, message, rules, ctxInfo) {
     return {
       guideline_id: this.id,
       elementInfo: {
-        tagName: "document",
-        selector: "body"
+        tagName: el.tagName,
+        selector: el !== document.body ? this.utils.getSelector(el) : "body"
       },
-      context: { smartContext: "레이아웃 및 시각적 디자인 검토" },
+      context: { smartContext: ctxInfo },
       result: { status, message, rules },
       currentStatus: status,
       history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: message }]

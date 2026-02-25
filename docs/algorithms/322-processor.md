@@ -1,7 +1,8 @@
-# ABT-7.2.2-Processor: 찾기 쉬운 도움 정보 알고리즘 v1.2
+# ABT-3.2.2-Processor: 찾기 쉬운 도움 정보 v0.10
 
-### 🔗 KWCAG 2.2 Reference
-- **7.2.2 (찾기 쉬운 도움 정보)**: 도움 정보가 제공되는 경우, 각 페이지에서 동일한 상대적인 순서로 접근할 수 있어야 한다.
+### 🔗 References
+- KWCAG 2.2: 3.2.2 찾기 쉬운 도움 정보
+- WCAG 2.2: 3.2.6 Findable Help (A) (Reference)
 
 ---
 

@@ -1,7 +1,8 @@
-# ABT-6.2.2-Processor: 정지 기능 제공 알고리즘 v1.0
+# ABT-2.2.2-Processor: 정지 기능 제공 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.2.2 Pause, Stop, Hide (Level A)**: For moving, blinking, scrolling, or auto-updating information, there is a mechanism for the user to pause, stop, or hide it.
+### 🔗 References
+- KWCAG 2.2: 2.2.2 정지 기능 제공
+- WCAG 2.2: 2.2.2 Pause, Stop, Hide (A) (Reference)
 
 ---
 

@@ -1,9 +1,8 @@
-# ABT-6.1.3-Processor: 조작 가능 알고리즘 v1.0
+# ABT-2.1.3-Processor: 조작 가능 v0.10
 
-### 🔗 WCAG 2.2 Reference
-- **SC 2.5.1 Pointer Gestures (Level A)**: All functionality that uses multipoint or path-based gestures for operation can be operated with a single pointer without a path-based gesture.
-- **SC 2.5.3 Label in Name (Level A)**: For user interface components with labels that include text or images of text, the name contains the text that is presented visually.
-- **SC 2.5.8 Target Size (Minimum) (Level AA)**: The size of the target for pointer inputs is at least 24 by 24 CSS pixels.
+### 🔗 References
+- KWCAG 2.2: 2.1.3 조작 가능
+- WCAG 2.2: 2.5.5 Target Size (Enhanced) (AAA) (Reference)
 
 ---
 

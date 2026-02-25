@@ -1,10 +1,8 @@
-# ABT-1.2.1-Processor: 자막 제공 (멀티미디어 대체수단) 알고리즘 v1.1
+# ABT-1.2.1-Processor: 자막 제공 v0.11
 
-### 🔗 WCAG 2.2 Reference
-- **SC 1.2.1 Audio-only and Video-only (Prerecorded) (Level A)**
-- **SC 1.2.2 Captions (Prerecorded) (Level A)**
-- **SC 1.2.3 Audio Description or Media Alternative (Prerecorded) (Level A)**
-- **SC 1.2.5 Audio Description (Prerecorded) (Level AA)**
+### 🔗 References
+- KWCAG 2.2: 1.2.1 자막 제공
+- WCAG 2.2: 1.2.2 Captions (Prerecorded) (A) (Reference)
 
 ---
 

@@ -43,6 +43,36 @@ class Processor141 {
         }
     }
 
+    // 3. 그래프/차트 콘텐츠 탐지 (Canvas, SVG, Chart-related containers)
+    const potentialCharts = document.querySelectorAll('canvas, svg:not([role="img"]), .chart, [id*="chart"], .graph, [id*="graph"]');
+    const processedCharts = new Set();
+
+    for (const el of potentialCharts) {
+      if (this.utils.isHidden(el)) continue;
+      
+      // 이미 분석된 요소나 부모가 차트 컨테이너인 경우 중복 방지
+      let parent = el.parentElement;
+      let isNested = false;
+      while (parent) {
+        if (processedCharts.has(parent)) {
+          isNested = true;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+      if (isNested) continue;
+
+      const style = window.getComputedStyle(el);
+      const width = parseInt(style.width);
+      const height = parseInt(style.height);
+
+      // 너무 작은 요소(아이콘 등)는 제외
+      if (width > 50 && height > 50) {
+        processedCharts.add(el);
+        reports.push(this.createReport(el, "검토 필요", "그래프나 차트 등 시각적 정보를 담은 콘텐츠가 탐지되었습니다. 데이터의 계열이나 값을 구분할 때 색상뿐만 아니라 패턴, 모양, 레이블 등 색에 무관하게 인식할 수 있는 수단이 함께 제공되는지 검토하세요."));
+      }
+    }
+
     return reports;
   }
 
