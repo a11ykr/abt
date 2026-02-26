@@ -1,4 +1,4 @@
-# ABT - A11Y Browser Tester (Chrome Extension)
+# 가칭: ABT - A11Y Browser Tester (Chrome Extension)
 
 > 🛡️ **브라우저 확장 프로그램 **
 > 브라우저 사이드 패널(Side Panel)을 통해 실시간 접근성 진단 및 판정 기능을 제공합니다.
