@@ -1,5 +1,5 @@
 /**
- * ABT Processor 641
+ * ABT Processor 2.4.1
  * KWCAG 2.2 지침 2.4.1 건너뛰기 링크 (Skip Navigation)
  */
 class Processor241 {
@@ -25,7 +25,7 @@ class Processor241 {
     }
 
     if (validSkipLinks.length === 0) {
-      reports.push(this.createReport(document.body, "오류", "문서 최상단에 본문으로 바로가기(건너뛰기) 링크가 제공되지 않았습니다.", ["Rule 641 (Missing Skip Link)"]));
+      reports.push(this.createReport(document.body, "오류", "문서 최상단에 본문으로 바로가기(건너뛰기) 링크가 제공되지 않았습니다.", ["Rule 2.4.1 (Missing Skip Link)"]));
     } else {
       for (const link of validSkipLinks) {
         reports.push(this.analyze(link));
@@ -46,15 +46,15 @@ class Processor241 {
     if (!targetEl && targetId.length > 0) {
       status = "오류";
       message = `건너뛰기 링크의 대상(id="${targetId}")이 문서에 존재하지 않습니다.`;
-      rules.push("Rule 641 (Invalid Target)");
+      rules.push("Rule 2.4.1 (Invalid Target)");
     } else if (targetEl && this.utils.isHidden(targetEl)) {
       status = "수정 권고";
       message = `건너뛰기 링크의 대상(id="${targetId}")이 숨겨져 있어 초점을 받을 수 없을 수 있습니다.`;
-      rules.push("Rule 641 (Hidden Target)");
+      rules.push("Rule 2.4.1 (Hidden Target)");
     } else if (!el.innerText.trim() && !el.getAttribute('aria-label')) {
       status = "오류";
       message = "건너뛰기 링크의 텍스트가 제공되지 않았습니다.";
-      rules.push("Rule 641 (Empty Link Text)");
+      rules.push("Rule 2.4.1 (Empty Link Text)");
     }
 
     return this.createReport(el, status, message, rules);

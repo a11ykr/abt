@@ -1,5 +1,5 @@
 /**
- * ABT Processor 143 (Contrast Ratio)
+ * ABT Processor 1.4.3 (Contrast Ratio)
  * KWCAG 2.2 지침 1.4.3 텍스트 콘텐츠의 명도 대비
  */
 class Processor143 {

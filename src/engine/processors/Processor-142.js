@@ -1,5 +1,5 @@
 /**
- * ABT Processor 142 (Audio Control)
+ * ABT Processor 1.4.2 (Audio Control)
  * KWCAG 2.2 지침 1.4.2 자동 재생 금지 지침 진단 프로세서
  */
 class Processor142 {

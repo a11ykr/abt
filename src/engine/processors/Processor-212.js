@@ -1,5 +1,5 @@
 /**
- * ABT Processor 212 (Focus Order and Visibility)
+ * ABT Processor 2.1.2 (Focus Order and Visibility)
  * KWCAG 2.2 지침 2.1.2 초점 이동과 표시
  */
 class Processor212 {
@@ -11,7 +11,8 @@ class Processor212 {
 
   async scan() {
     const reports = [];
-    const focusableElements = document.querySelectorAll(this.focusableSelectors);
+    // 중복 요소 제거 (querySelectorAll 결과에 중복이 있을 수 있음)
+    const focusableElements = [...new Set(document.querySelectorAll(this.focusableSelectors))];
 
     for (const el of focusableElements) {
       if (this.utils.isHidden(el)) continue;

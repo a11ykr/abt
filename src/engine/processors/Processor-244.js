@@ -1,6 +1,6 @@
 /**
- * ABT Processor 244 (Focus Not Obscured)
- * KWCAG 2.2 지침 2.4.4 고정된 참조 위치 정보 (Focus Not Obscured)
+ * ABT Processor 2.4.4 (Fixed Reference Location Information)
+ * KWCAG 2.2 지침 2.4.4 고정된 참조 위치 정보
  */
 class Processor244 {
   constructor() {
@@ -10,61 +10,43 @@ class Processor244 {
 
   async scan() {
     const reports = [];
-    const focusable = document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
-    const stickyElements = Array.from(document.querySelectorAll('*')).filter(el => {
-      const style = window.getComputedStyle(el);
-      return style.position === 'fixed' || style.position === 'sticky';
-    });
+    
+    // 이 지침은 오프라인 매체(인쇄물 등)와 온라인 문서 간의 페이지 번호 일관성을 묻는 항목입니다.
+    // 기계적으로는 '페이지 번호'로 추정되는 텍스트나 내비게이션 요소가 있는지 탐지합니다.
+    const pageNumberElements = document.querySelectorAll('.page-number, .pg-num, [aria-label*="페이지"], [aria-label*="page"]');
 
-    if (stickyElements.length === 0) return [];
-
-    for (const el of focusable) {
-      if (this.utils.isHidden(el)) continue;
-      
-      const rect = el.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) continue;
-
-      for (const sticky of stickyElements) {
-        if (sticky.contains(el)) continue; // Focused element is part of the sticky container
-        if (this.utils.isHidden(sticky)) continue;
-
-        const sRect = sticky.getBoundingClientRect();
-        
-        // Check if sticky element overlaps with the focused element
-        const isOverlapping = !(
-          rect.right < sRect.left || 
-          rect.left > sRect.right || 
-          rect.bottom < sRect.top || 
-          rect.top > sRect.bottom
-        );
-
-        if (isOverlapping) {
-          const style = window.getComputedStyle(sticky);
-          if (parseFloat(style.opacity) > 0.5 && style.visibility !== 'hidden') {
-            reports.push(this.createReport(el, "검토 필요", `포커스된 요소가 고정 영역(selector: ${this.utils.getSelector(sticky)})에 의해 가려질 가능성이 있습니다. 키보드 접근 시 해당 요소가 시각적으로 노출되는지 확인하세요.`, sticky));
-          }
-        }
+    if (pageNumberElements.length > 0) {
+      for (const el of pageNumberElements) {
+        reports.push(this.createReport(el, "검토 필요", `페이지 번호 참조용으로 추정되는 요소('${el.innerText.trim()}')가 탐지되었습니다. 페이지가 고정된 원본 매체(인쇄물, PDF 등)와 동일한 위치 정보를 제공하고 있는지 확인하세요.`));
       }
+    } else {
+      // 기본적으로 모든 페이지에 대해 수동 검토 가이드 제공
+      reports.push({
+        guideline_id: this.id,
+        elementInfo: { tagName: "document", selector: "body" },
+        context: { smartContext: "원본 매체와의 참조 위치 일관성 검토" },
+        result: { 
+          status: "검토 필요", 
+          message: "페이지 번호가 있는 원본 매체(인쇄물, PDF 등)가 함께 제공되는 경우, 해당 매체의 고정된 참조 위치 정보를 온라인에서도 동일하게 제공하고 있는지 확인하세요.",
+          rules: ["Rule 2.4.4 (Fixed Reference Location)"]
+        },
+        currentStatus: "검토 필요",
+        history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "수동 검토 가이드 생성" }]
+      });
     }
 
     return reports;
   }
 
-  createReport(el, status, message, stickyEl) {
+  createReport(el, status, message, rules = ["Rule 2.4.4 (Page Reference Detection)"]) {
     return {
       guideline_id: this.id,
       elementInfo: {
         tagName: el.tagName,
         selector: this.utils.getSelector(el)
       },
-      context: { 
-        smartContext: `Obscuring element: ${stickyEl ? this.utils.getSelector(stickyEl) : "unknown"}` 
-      },
-      result: { 
-        status: status, 
-        message: message,
-        rules: ["Rule 2.4.4 (Focus Obscured)"]
-      },
+      context: { smartContext: `Detected text: "${el.innerText.trim()}"` },
+      result: { status, message, rules },
       currentStatus: status,
       history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: message }]
     };

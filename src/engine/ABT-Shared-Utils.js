@@ -6,30 +6,56 @@ window.ABTUtils = Object.assign(window.ABTUtils || {}, {
   /**
    * 요소의 CSS 셀렉터를 생성합니다.
    */
+  /**
+   * 요소의 고유성을 보장하기 위한 다중 선택자 전략을 생성합니다.
+   * 단순히 하나의 선택자만 반환하는 것이 아니라, 폴백 가능한 정보를 포함할 수 있도록 합니다.
+   */
+  /**
+   * 요소의 고유성을 보장하기 위한 다중 선택자 전략을 생성합니다.
+   * 단순히 하나의 선택자만 반환하는 것이 아니라, 문서 전체에서 해당 요소를 유일하게 특정할 수 있는 경로를 생성합니다.
+   */
   getSelector: function(el) {
-    if (el.id) return `#${el.id}`;
-    // 클래스명이 있는 경우
+    if (!el) return "";
+    if (el.id) return `#${CSS.escape(el.id)}`;
+    
+    const tagName = el.tagName.toLowerCase();
+    
+    // 1. 클래스 조합이 전역적으로 유일한지 먼저 확인
     if (el.className && typeof el.className === 'string') {
-      const classes = el.className.split(/\s+/).filter(Boolean).join('.');
+      const classes = el.className.trim().split(/\s+/).filter(Boolean).map(c => `.${CSS.escape(c)}`).join('');
       if (classes) {
-        // 동일 클래스를 가진 형제들 중 몇 번째인지 계산 (고유성 강화)
-        const siblings = Array.from(el.parentElement?.children || []).filter(s => s.className === el.className);
-        if (siblings.length > 1) {
-          const index = siblings.indexOf(el) + 1;
-          return `.${classes}:nth-of-type(${index})`;
-        }
-        return `.${classes}`;
+        const fullClassSelector = `${tagName}${classes}`;
+        try {
+          if (document.querySelectorAll(fullClassSelector).length === 1) return fullClassSelector;
+        } catch (e) {}
       }
     }
 
-    // ID나 클래스가 없는 경우 태그명 + 순서로 생성
-    const tagName = el.tagName.toLowerCase();
-    const allOfSameTag = Array.from(el.parentElement?.children || []).filter(s => s.tagName.toLowerCase() === tagName);
-    if (allOfSameTag.length > 1) {
-      const index = allOfSameTag.indexOf(el) + 1;
-      return `${tagName}:nth-of-type(${index})`;
+    // 2. 고유한 경로 생성 (부모로 거슬러 올라가며 nth-child 적용)
+    let path = [];
+    let cur = el;
+    while (cur && cur.nodeType === Node.ELEMENT_NODE) {
+      let selector = cur.tagName.toLowerCase();
+      if (cur.id) {
+        selector = `#${CSS.escape(cur.id)}`;
+        path.unshift(selector);
+        break; // ID는 유일하므로 여기서 멈춤
+      }
+
+      const parent = cur.parentElement;
+      if (parent) {
+        const index = Array.from(parent.children).indexOf(cur) + 1;
+        selector += `:nth-child(${index})`;
+      }
+      
+      path.unshift(selector);
+      cur = parent;
+      
+      if (!cur || cur.tagName === 'HTML' || cur.tagName === 'BODY') break;
+      if (path.length > 15) break; 
     }
-    return tagName;
+
+    return path.join(' > ');
   },
 
   /**
@@ -145,4 +171,61 @@ window.ABTUtils = Object.assign(window.ABTUtils || {}, {
 
     return false;
   }
+
+  /**
+   * W3C AccName 1.2 기반 Accessible Name 추출 (경량화 버전)
+   * 참고: https://www.w3.org/TR/accname-1.2/
+   * @param {HTMLElement} el
+   * @returns {string}
+   */
+  getAccessibleName: function(el) {
+    if (!el || el.nodeType !== Node.ELEMENT_NODE) return "";
+
+    // 1. aria-labelledby (가장 높은 우선순위)
+    if (el.hasAttribute('aria-labelledby')) {
+      const ids = el.getAttribute('aria-labelledby').split(/\s+/);
+      const parts = ids.map(id => {
+        const target = document.getElementById(id);
+        // Note: W3C 표준에 따르면 여기서 target의 aria-labelledby는 무시해야 하지만,
+        // 경량 구현이므로 innerText/textContent를 우선 가져옵니다.
+        return target ? (target.innerText || target.textContent).trim() : "";
+      });
+      const name = parts.join(" ").trim();
+      if (name) return name;
+    }
+
+    // 2. aria-label
+    if (el.hasAttribute('aria-label')) {
+      const name = el.getAttribute('aria-label').trim();
+      if (name) return name;
+    }
+
+    // 3. Native markup (e.g., alt for img, value for inputs)
+    const tagName = el.tagName.toLowerCase();
+    if (tagName === 'img' || tagName === 'area') {
+      return el.getAttribute('alt') || "";
+    }
+    if (tagName === 'input' && (el.type === 'button' || el.type === 'submit' || el.type === 'reset')) {
+      return el.value || "";
+    }
+    if (tagName === 'input' && el.type === 'image') {
+      return el.getAttribute('alt') || el.value || "";
+    }
+
+    // 4. Text content (자식 요소 텍스트 포함)
+    // input/select 등의 경우 연관된 label 요소를 찾아야 하나, 
+    // 기본적으로 innerText를 사용하여 화면에 보이는 텍스트를 추출
+    const textContent = el.innerText || el.textContent;
+    if (textContent && textContent.trim()) {
+      return textContent.trim();
+    }
+
+    // 5. title attribute (가장 낮은 우선순위)
+    if (el.hasAttribute('title')) {
+      return el.getAttribute('title').trim();
+    }
+
+    return "";
+  },
+
 });

@@ -69,87 +69,126 @@ class ABTCore {
 
 
   /**
-   * 특정 요소를 찾아 화면에 표시하고 아주 명확한 테두리로 강조합니다.
+   * 특정 요소를 찾아 화면에 표시하고 고해상도 스포트라이트로 강조합니다.
    */
   highlightElement(selector) {
     try {
-      const el = document.querySelector(selector);
-      if (!el) {
-        console.warn(`ABT: Element not found for selector: ${selector}`);
+      if (!selector || selector === 'outline' || selector === 'document' || selector === 'body') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
-      // 1. 화면 중앙으로 부드럽게 스크롤
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // 1. 요소 탐색 (기본 선택자 -> 태그 기반 폴백)
+      let el = document.querySelector(selector);
+      
+      if (!el) {
+        console.warn(`ABT: Selector failed: ${selector}. Trying structure fallback...`);
+        try {
+          const parts = selector.split(' > ');
+          const lastPart = parts[parts.length - 1];
+          const tagMatch = lastPart.match(/^([a-z0-9]+)/i);
+          if (tagMatch) {
+            const tagName = tagMatch[1];
+            const nthMatch = lastPart.match(/:nth-child\((\d+)\)/) || lastPart.match(/:nth-of-type\((\d+)\)/);
+            if (nthMatch) {
+              const index = parseInt(nthMatch[1]) - 1;
+              const candidates = document.querySelectorAll(tagName);
+              el = candidates[index];
+            }
+          }
+        } catch (e) {}
+      }
 
-      // 2. 기존 하이라이트 요소들 제거
+      if (!el) {
+        console.error(`ABT: Failed to locate element.`);
+        return;
+      }
+
+      // 2. 가려짐 방지 정밀 스크롤
+      const rect = el.getBoundingClientRect();
+      const absoluteTop = rect.top + window.pageYOffset;
+      
+      // 고정 헤더 감지
+      let headerOffset = 0;
+      const fixies = Array.from(document.querySelectorAll('*')).filter(n => {
+        const s = window.getComputedStyle(n);
+        return (s.position === 'fixed' || s.position === 'sticky') && 
+               parseInt(s.top) <= 0 && n.offsetHeight > 0 && n.offsetHeight < window.innerHeight / 3;
+      });
+      if (fixies.length > 0) headerOffset = Math.max(...fixies.map(n => n.offsetHeight));
+
+      window.scrollTo({
+        top: Math.max(0, absoluteTop - headerOffset - (window.innerHeight / 4)),
+        behavior: 'smooth'
+      });
+
+      // 3. SVG 스포트라이트 오버레이
+      const containerId = 'abt-spotlight-overlay-v2';
       const removeOld = () => {
-        const oldOverlay = document.getElementById('abt-highlight-overlay');
-        const oldStyle = document.getElementById('abt-highlight-style');
-        if (oldOverlay) oldOverlay.remove();
-        if (oldStyle) oldStyle.remove();
+        const old = document.getElementById(containerId);
+        if (old) old.remove();
       };
       removeOld();
 
-      // 3. 하이라이트 오버레이 생성
-      const rect = el.getBoundingClientRect();
-      const overlay = document.createElement('div');
-      overlay.id = 'abt-highlight-overlay';
+      const container = document.createElement('div');
+      container.id = containerId;
+      Object.assign(container.style, {
+        position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+        pointerEvents: 'none', zIndex: '2147483647', transition: 'opacity 0.3s'
+      });
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
       
-      // 아주 명확한 스타일 설정 (두꺼운 마젠타색 테두리 + 스포트라이트)
-      Object.assign(overlay.style, {
-        position: 'fixed',
-        top: `${rect.top - 8}px`,
-        left: `${rect.left - 8}px`,
-        width: `${rect.width + 16}px`,
-        height: `${rect.height + 16}px`,
-        backgroundColor: 'transparent',
-        border: '5px solid #ff00ff', // 고대비 마젠타 색상
-        borderRadius: '8px',
-        zIndex: '2147483647',
-        pointerEvents: 'none',
-        boxShadow: '0 0 0 4000px rgba(0, 0, 0, 0.7), inset 0 0 20px #ff00ff', // 강한 배경 어둡게 + 안쪽 광채
-        transition: 'opacity 0.3s ease'
-      });
+      const maskId = 'abt-mask-' + Math.random().toString(36).substr(2, 9);
+      svg.innerHTML = `
+        <defs>
+          <mask id="${maskId}">
+            <rect width="100%" height="100%" fill="white" />
+            <rect id="abt-mask-hole" x="0" y="0" width="0" height="0" rx="4" fill="black" />
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="rgba(0,0,0,0.7)" mask="url(#${maskId})" />
+        <rect id="abt-focus-rect" x="0" y="0" width="0" height="0" rx="4" fill="none" stroke="#ff00ff" stroke-width="4" />
+      `;
 
-      // 4. 라벨 추가 (테두리 바로 위에 밀착)
-      const label = document.createElement('div');
-      label.textContent = 'TARGET ELEMENT';
-      Object.assign(label.style, {
-        position: 'absolute',
-        top: '-35px',
-        left: '-5px',
-        backgroundColor: '#ff00ff',
-        color: 'white',
-        padding: '4px 12px',
-        borderRadius: '4px',
-        fontSize: '14px',
-        fontWeight: '900',
-        whiteSpace: 'nowrap',
-        boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
-      });
-      overlay.appendChild(label);
+      container.appendChild(svg);
+      document.body.appendChild(container);
 
-      document.body.appendChild(overlay);
+      const hole = svg.querySelector('#abt-mask-hole');
+      const focusRect = svg.querySelector('#abt-focus-rect');
 
-      // 5. 사용자가 확인 후 클릭하면 사라지게 하거나 시간 지나면 삭제
-      // (일단 5초로 늘림)
-      const timer = setTimeout(() => {
-        overlay.style.opacity = '0';
-        setTimeout(removeOld, 300);
-      }, 5000);
-
-      // 브라우저에서 아무곳이나 클릭하면 즉시 강조 제거 로직 추가 가능
-      const clearHandler = () => {
-        removeOld();
-        clearTimeout(timer);
-        document.removeEventListener('mousedown', clearHandler);
+      // 4. 애니메이션 실시간 위치 추적
+      let active = true;
+      const update = () => {
+        if (!active || !el) return;
+        const r = el.getBoundingClientRect();
+        const p = 8; // padding
+        const attrs = {
+          x: r.left - p, y: r.top - p,
+          width: r.width + (p * 2), height: r.height + (p * 2)
+        };
+        
+        [hole, focusRect].forEach(target => {
+          for (let k in attrs) target.setAttribute(k, attrs[k]);
+        });
+        requestAnimationFrame(update);
       };
-      document.addEventListener('mousedown', clearHandler);
+      requestAnimationFrame(update);
 
-      console.log(`ABT: Spotlight focus on: ${selector}`);
+      // 5. 클린업
+      const cleanup = () => {
+        active = false;
+        container.style.opacity = '0';
+        setTimeout(removeOld, 300);
+        document.removeEventListener('mousedown', cleanup);
+      };
+      document.addEventListener('mousedown', cleanup);
+      setTimeout(cleanup, 4000);
+
     } catch (e) {
-      console.error("ABT: Error highlighting element", e);
+      console.error("ABT: Spotlight Error", e);
     }
   }
 }

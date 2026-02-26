@@ -1,5 +1,5 @@
 /**
- * ABT Processor 621
+ * ABT Processor 2.2.1
  * KWCAG 2.2 지침 2.2.1 응답 시간 조절 (Adjustable Timing)
  */
 class Processor221 {

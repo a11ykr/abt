@@ -1,4 +1,4 @@
-@import './variables';
+@use './variables' as *;
 
 .container {
   display: flex;
@@ -108,6 +108,84 @@
     cursor: pointer;
     transition: all 0.2s;
     &:hover { background: rgba(59, 130, 246, 0.1); transform: translateY(-1px); }
+  }
+
+  .historyList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    text-align: left;
+  }
+
+  .historyItem {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-muted);
+
+    &:hover {
+      border-color: var(--accent-blue);
+      color: var(--text-main);
+      background: var(--bg-hover);
+      transform: translateX(4px);
+    }
+
+    .historyInfo {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+      
+      .historyTimeRow {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 2px;
+      }
+
+      .historyBadge {
+        font-size: 8px;
+        background: var(--bg-hover);
+        color: var(--accent-blue);
+        padding: 1px 4px;
+        border-radius: 3px;
+        font-weight: 800;
+        font-family: monospace;
+      }
+
+      .historyRelative {
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--text-main);
+      }
+
+      .historyAbsolute {
+        font-size: 9px;
+        color: var(--text-dim);
+      }
+
+      .historyTitle {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+
+  .moreHistory {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
   }
 
   .features {
@@ -402,6 +480,5 @@
     &.h6 { padding-left: 5rem; }
   }
 }
-
 
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }

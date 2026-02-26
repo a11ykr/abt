@@ -1,5 +1,5 @@
 /**
- * ABT Processor 733
+ * ABT Processor 3.3.3
  * KWCAG 2.2 지침 3.3.3 콘텐츠의 선형 구조 (Linear Order - Redundant)
  * Note: KWCAG 2.2 often groups this. It's essentially 6.4.4 checked from a comprehension perspective.
  */
@@ -29,7 +29,7 @@ class Processor333 {
         document.body,
         "검토 필요",
         "페이지의 제목(Heading) 계층 구조가 논리적인 순서(h1 -> h2 -> h3)로 제공되어 콘텐츠를 순차적으로 이해할 수 있는지 수동으로 검토하세요.",
-        ["Rule 733 (Heading Hierarchy Review)"]
+        ["Rule 333. (Heading Hierarchy Review)"]
       ));
     }
 
@@ -39,7 +39,7 @@ class Processor333 {
   analyze(el) {
     const status = "검토 필요";
     const message = "제목 셀(<th>)이 없는 표가 감지되었습니다. 화면 배치를 목적으로 <table>을 사용한 경우 스크린 리더에서 읽는 순서가 엉킬 수 있으니 role='presentation'을 추가하거나 CSS 레이아웃으로 변경하세요.";
-    const rules = ["Rule 733 (Layout Table Check)"];
+    const rules = ["Rule 333. (Layout Table Check)"];
 
     return this.createReport(el, status, message, rules);
   }

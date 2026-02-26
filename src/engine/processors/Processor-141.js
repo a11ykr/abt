@@ -1,5 +1,5 @@
 /**
- * ABT Processor 541 (Use of Color)
+ * ABT Processor 1.4.1 (Use of Color)
  * 5.4.1 색에 무관한 콘텐츠 인식 지침 진단 프로세서
  */
 class Processor141 {

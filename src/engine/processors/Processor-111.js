@@ -1,5 +1,5 @@
 /**
- * ABT Processor 511 (Non-text Content)
+ * ABT Processor 1.1.1 (Non-text Content)
  * KWCAG 2.2 지침 1.1.1 적절한 대체 텍스트 제공 알고리즘
  */
 class Processor111 {

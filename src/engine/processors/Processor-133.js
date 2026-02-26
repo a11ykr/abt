@@ -1,33 +1,36 @@
 /**
- * ABT Processor 133 (Providing Instructions)
+ * ABT Processor 1.3.3 (Providing Instructions)
  * KWCAG 2.2 지침 1.3.3 명확한 지시사항 제공 지침 진단 프로세서
  */
 class Processor133 {
   constructor() {
     this.id = "1.3.3";
     this.utils = window.ABTUtils;
-    // 시각적/감각적 지시사항과 관련된 키워드들
-    this.sensoryKeywords = [
-      "동그란", "네모난", "원형", "사각형", "둥근", "모양",
-      "왼쪽", "오른쪽", "상단", "하단", "위", "아래", "옆", "측면",
-      "빨간", "파란", "노란", "초록", "검정", "흰색", "색상",
-      "큰", "작은", "대형", "소형", "사이즈",
-      "소리", "신호음", "비프", "벨", "음성"
-    ];
-    // 지시사항(명령/안내)과 관련된 키워드들
-    this.instructionKeywords = [
-      "버튼", "링크", "아이콘", "메뉴", "항목", "탭",
-      "클릭", "누르", "선택", "참조", "확인", "사용"
+    
+    // 지능형 패턴 매칭 (감각적 표현 + 지시어 결합)
+    // 단순 단어 포함이 아닌, 문맥적으로 지시사항임이 의심되는 구문을 탐지합니다.
+    this.detectionPatterns = [
+      // 1. 위치 기반 지시 (예: "왼쪽 버튼을 클릭", "상단 메뉴 참조")
+      /(왼쪽|오른쪽|위쪽|아래쪽|상단|하단|옆|측면|앞|뒤)[\s\w]*(버튼|링크|아이콘|메뉴|항목|탭|클릭|누르|선택|참조|확인|사용)/i,
+      
+      // 2. 색상 기반 지시 (예: "빨간색 버튼", "초록색은 완료")
+      /(빨간|파란|노란|초록|검정|흰색|어두운|밝은)[\s\w]*(색|버튼|링크|아이콘|클릭|누르|항목)/i,
+      
+      // 3. 형태/크기 기반 지시 (예: "동그란 아이콘", "큰 항목")
+      /(동그란|네모난|원형|사각형|둥근|모양|큰|작은)[\s\w]*(버튼|링크|아이콘|클릭|누르|항목)/i,
+      
+      // 4. 소리 기반 지시 (예: "신호음이 들리면")
+      /(소리|신호음|비프|벨|음성)[\s\w]*(로|를|가|이|들리면|나면|확인)/i
     ];
   }
 
   async scan() {
     const reports = [];
-    // 텍스트가 포함된 모든 요소를 탐색 (p, span, div, li, label 등)
+    // 텍스트가 포함된 모든 요소를 탐색
     const textElements = document.querySelectorAll('p, span, div, li, label, h1, h2, h3, h4, h5, h6');
 
     for (const el of textElements) {
-      // 직접 텍스트 노드만 추출하여 키워드 매칭
+      // 직접 텍스트 노드만 추출
       const directText = Array.from(el.childNodes)
         .filter(node => node.nodeType === Node.TEXT_NODE)
         .map(node => node.textContent.trim())
@@ -35,24 +38,18 @@ class Processor133 {
 
       if (!directText) continue;
 
-      // 정교한 키워드 매칭 (단순 포함이 아닌 독립적 의미 확인)
-      const foundKeywords = this.sensoryKeywords.filter(k => {
-        // 1글자 키워드(위, 옆 등)는 앞뒤에 공백이나 문장 부호가 있을 때만 매칭하여 false positive 방지
-        if (k.length === 1) {
-          const regex = new RegExp(`(^|\\s|[.,!?;:])[${k}]($|\\s|[.,!?;:])`);
-          return regex.test(directText);
+      // 패턴 매칭 수행
+      let foundPattern = null;
+      for (const pattern of this.detectionPatterns) {
+        const match = directText.match(pattern);
+        if (match) {
+          foundPattern = match[0];
+          break;
         }
-        // 2글자 이상은 그대로 포함 여부 확인
-        return directText.includes(k);
-      });
+      }
 
-      if (foundKeywords.length > 0) {
-        // 지시사항 관련 키워드가 함께 존재하는지 확인 (단순 단어 포함 여부보다 안내 문구로서의 성격 강화)
-        const hasInstruction = this.instructionKeywords.some(k => directText.includes(k));
-        
-        if (hasInstruction) {
-          reports.push(this.createReport(el, "검토 필요", `지시사항에 시각적/감각적 표현('${foundKeywords.join(', ')}')이 안내 키워드와 함께 포함되어 있습니다. 특정 감각에만 의존하지 않는지 확인하세요.`));
-        }
+      if (foundPattern) {
+        reports.push(this.createReport(el, "검토 필요", `지시사항에 감각적 표현이 포함된 구문("${foundPattern}")이 탐지되었습니다. 시각이나 청각 등 특정 감각에만 의존하여 정보를 전달하고 있지 않은지 수동으로 검토하세요.`));
       }
     }
 
@@ -72,7 +69,7 @@ class Processor133 {
       result: {
         status: status,
         message: message,
-        rules: ["Rule 1.1 (Sensory Characteristics)"]
+        rules: ["Rule 1.3.3 (Sensory Characteristics)"]
       },
       currentStatus: status,
       history: [{

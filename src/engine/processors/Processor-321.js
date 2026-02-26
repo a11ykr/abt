@@ -1,5 +1,5 @@
 /**
- * ABT Processor 321 (On Focus)
+ * ABT Processor 3.2.1 (On Focus)
  * KWCAG 2.2 지침 3.2.1 사용자 요구에 따른 실행 (On Focus)
  */
 class Processor321 {

@@ -1,5 +1,5 @@
 /**
- * ABT Processor 611 (Keyboard Accessibility)
+ * ABT Processor 2.1.1 (Keyboard Accessibility)
  * 6.1.1 키보드 사용 보장 지침 진단 프로세서
  */
 class Processor211 {

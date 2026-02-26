@@ -1,5 +1,5 @@
 /**
- * ABT Processor 144 (Content Differentiation)
+ * ABT Processor 1.4.4 (Content Differentiation)
  * KWCAG 2.2 지침 1.4.4 콘텐츠 간의 구분 (Content Differentiation)
  */
 class Processor144 {

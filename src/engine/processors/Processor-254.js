@@ -1,5 +1,5 @@
 /**
- * ABT Processor 254 (Motion Actuation)
+ * ABT Processor 2.5.4 (Motion Actuation)
  * KWCAG 2.2 지침 2.5.4 동작기반 작동 (Motion Actuation)
  */
 class Processor254 {

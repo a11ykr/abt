@@ -1,5 +1,5 @@
 /**
- * ABT Processor 532 (Linear Structure)
+ * ABT Processor 1.3.2 (Linear Structure)
  * 5.3.2 콘텐츠의 선형구조 지침 진단 프로세서
  */
 class Processor132 {

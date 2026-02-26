@@ -1,5 +1,5 @@
 /**
- * ABT Processor 521 (Multimedia - Video/Audio)
+ * ABT Processor 1.2.1 (Multimedia - Video/Audio)
  * 5.2.1 자막 제공 지침 진단 프로세서
  */
 class Processor121 {

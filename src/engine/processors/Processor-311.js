@@ -1,5 +1,5 @@
 /**
- * ABT Processor 711
+ * ABT Processor 3.1.1
  * KWCAG 2.2 지침 3.1.1 기본 언어 표시 (Default Language)
  */
 class Processor311 {
@@ -23,15 +23,15 @@ class Processor311 {
     if (!lang) {
       status = "오류";
       message = "<html> 요소에 lang 속성이 제공되지 않았습니다.";
-      rules.push("Rule 711 (Missing lang)");
+      rules.push("Rule 311. (Missing lang)");
     } else if (lang.trim() === "") {
       status = "오류";
       message = "<html> 요소의 lang 속성값이 비어있습니다.";
-      rules.push("Rule 711 (Empty lang)");
+      rules.push("Rule 311. (Empty lang)");
     } else if (!/^[a-zA-Z]{2,3}(-[a-zA-Z]{2,4})?$/.test(lang.trim())) {
       status = "수정 권고";
       message = `lang 속성값("${lang}")이 표준 언어 코드(예: ko, en) 형식인지 확인하세요.`;
-      rules.push("Rule 711 (Invalid lang format)");
+      rules.push("Rule 311. (Invalid lang format)");
     }
 
     return this.createReport(el, status, message, rules);

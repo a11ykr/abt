@@ -1,5 +1,5 @@
 /**
- * ABT Processor 631
+ * ABT Processor 2.3.1
  * KWCAG 2.2 지침 2.3.1 번쩍임 제한 (Flashing Limit)
  */
 class Processor231 {

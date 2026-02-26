@@ -1,5 +1,5 @@
 /**
- * ABT Processor 332
+ * ABT Processor 3.3.2
  * KWCAG 2.2 지침 3.3.2 레이블 제공 (Labeling)
  */
 class Processor332 {

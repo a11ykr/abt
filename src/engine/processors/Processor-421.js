@@ -1,5 +1,5 @@
 /**
- * ABT Processor 821
+ * ABT Processor 4.2.1
  * KWCAG 2.2 지침 4.2.1 웹 애플리케이션 접근성 (Web App Accessibility - ARIA)
  */
 class Processor421 {
@@ -25,7 +25,7 @@ class Processor421 {
         document.body,
         "검토 필요",
         "동적으로 변하는 콘텐츠나 커스텀 위젯이 있는 경우, ARIA 속성이 올바르게 사용되었는지 수동으로 검토하세요.",
-        ["Rule 821 (Manual ARIA Review)"],
+        ["Rule 421. (Manual ARIA Review)"],
         "없음"
       ));
     }
@@ -36,7 +36,7 @@ class Processor421 {
   analyze(el) {
     let status = "검토 필요";
     let message = `역할(role="${el.getAttribute('role')}")이 부여된 커스텀 위젯입니다. 상태 변화(예: aria-expanded, aria-checked)가 스크린 리더에 잘 전달되고 키보드로 조작 가능한지 확인하세요.`;
-    const rules = ["Rule 821 (Custom Widget Review)"];
+    const rules = ["Rule 421. (Custom Widget Review)"];
     
     const role = el.getAttribute('role');
 
@@ -44,7 +44,7 @@ class Processor421 {
     if (['button', 'link', 'checkbox', 'switch', 'tab', 'menuitem'].includes(role) && !el.hasAttribute('tabindex') && !['A', 'BUTTON', 'INPUT'].includes(el.tagName)) {
       status = "수정 권고";
       message = `역할(role="${role}")이 부여되었으나 초점을 받을 수 없습니다(tabindex 누락). 키보드 접근성을 확인하세요.`;
-      rules.push("Rule 821 (Missing Tabindex on Widget)");
+      rules.push("Rule 421. (Missing Tabindex on Widget)");
     }
 
     return this.createReport(el, status, message, rules, `Role: ${role}`);

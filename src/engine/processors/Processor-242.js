@@ -11,13 +11,14 @@ class Processor242 {
   async scan() {
     const reports = [];
 
-    const pageTitle = document.title ? document.title.trim() : "";
-    if (!pageTitle) {
-      reports.push(this.createPageReport("오류", "페이지 제목(<title>)이 누락되었거나 비어있습니다."));
+    const titleEl = document.head.querySelector('title');
+    const pageTitle = titleEl ? titleEl.textContent.trim() : "";
+    if (!titleEl || !pageTitle) {
+      reports.push(this.createPageReport("오류", "페이지 제목(<title>)이 <head> 내에 존재하지 않거나 비어있습니다.", "title"));
     } else if (this.meaninglessTitles.includes(pageTitle.toLowerCase())) {
-      reports.push(this.createPageReport("부적절", `페이지 제목('${pageTitle}')이 구체적이지 않거나 의미 없는 기본값입니다.`));
+      reports.push(this.createPageReport("부적절", `페이지 제목('${pageTitle}')이 구체적이지 않거나 의미 없는 기본값입니다.`, "title"));
     } else {
-      reports.push(this.createPageReport("검토 필요", `페이지 제목('${pageTitle}')이 존재합니다. 해당 문구가 페이지의 내용을 핵심적으로 설명하고 있는지 검토하세요.`));
+      reports.push(this.createPageReport("검토 필요", `페이지 제목('${pageTitle}')이 존재합니다. 해당 문구가 페이지의 내용을 핵심적으로 설명하고 있는지 검토하세요.`, "title"));
     }
 
     const frames = document.querySelectorAll('iframe, frame');
@@ -35,9 +36,9 @@ class Processor242 {
 
     const h1 = document.querySelector('h1');
     if (!h1) {
-      reports.push(this.createPageReport("수정 권고", "페이지 내에 대주제(<h1>)가 존재하지 않습니다. 구조적 제목 제공을 권장합니다."));
+      reports.push(this.createPageReport("검토 필요", "페이지 내에 대주제(<h1>)가 존재하지 않습니다. 문서의 핵심 주제가 적절하게 식별되는지 검토하세요.", "h1"));
     } else {
-      reports.push(this.createPageReport("적절", "페이지 내에 구조적 대주제(<h1>)가 존재합니다."));
+      reports.push(this.createPageReport("적절", "페이지 내에 구조적 대주제(<h1>)가 존재합니다.", "h1"));
     }
 
 
@@ -67,15 +68,15 @@ class Processor242 {
     };
   }
 
-  createPageReport(status, message) {
+  createPageReport(status, message, type = "title") {
     return {
       guideline_id: this.id,
       elementInfo: {
-        tagName: 'HEAD',
-        selector: 'title'
+        tagName: type === "title" ? 'HEAD' : 'BODY',
+        selector: type
       },
       context: {
-        smartContext: `현재 페이지 제목: ${document.title || '(없음)'}`
+        smartContext: type === "title" ? `현재 페이지 제목: ${document.title || '(없음)'}` : "페이지 내 <h1> 존재 여부 검사"
       },
       result: {
         status: status,

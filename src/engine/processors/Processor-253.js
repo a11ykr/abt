@@ -1,5 +1,5 @@
 /**
- * ABT Processor 253
+ * ABT Processor 2.5.3
  * KWCAG 2.2 지침 2.5.3 레이블과 네임 (Label in Name)
  */
 class Processor253 {
@@ -9,7 +9,8 @@ class Processor253 {
   }
 
   async scan() {
-    const interactiveElements = document.querySelectorAll('a, button, [role="button"], [role="link"], label');
+    // 2.5.3 지침은 사용자가 조작 가능한 '대화형 요소'에 적용됩니다.
+    const interactiveElements = document.querySelectorAll('a, button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"], [role="link"], label');
     const reports = [];
 
     for (const el of interactiveElements) {
@@ -22,25 +23,43 @@ class Processor253 {
   }
 
   analyze(el) {
-    // 시각적 텍스트 추출 (자식 노드들의 텍스트 합계)
-    const visibleText = el.innerText.trim();
+    // W3C AccName 1.2 규칙에 따른 '프로그램적 네임(Accessible Name)'과 
+    // 화면에 표시되는 '시각적 레이블(Visible Label)'을 비교합니다.
+
+    // 1. 시각적 레이블 추출 (화면에 렌더링된 텍스트)
+    const visibleText = el.innerText ? el.innerText.trim() : "";
+    
+    // 시각적 텍스트가 없는 요소(예: 아이콘만 있는 버튼)는 2.5.3 검사 대상이 아닙니다.
+    // 2.5.3은 "시각적 레이블이 있는 경우, 그것이 프로그램적 네임에 포함되어야 한다"는 지침입니다.
     if (!visibleText) return null;
 
-    // 프로그램적 네임(Accessible Name) 추출
-    let accName = "";
-    if (el.hasAttribute('aria-label')) {
-      accName = el.getAttribute('aria-label').trim();
-    } else if (el.hasAttribute('aria-labelledby')) {
-      const target = document.getElementById(el.getAttribute('aria-labelledby'));
-      if (target) accName = target.textContent.trim();
-    } else if (el.hasAttribute('title')) {
-      accName = el.getAttribute('title').trim();
-    } else if (el.tagName.toLowerCase() === 'img') {
-      accName = el.getAttribute('alt')?.trim() || "";
+    // 2. 프로그램적 네임(Accessible Name) 추출 (우선순위: aria-labelledby > aria-label > native > title)
+    // 참고: 텍스트 노드 자체가 네임이 되는 경우는 위 visibleText와 100% 동일하므로 검사할 필요가 없습니다.
+    // 따라서 명시적으로 '네임을 덮어쓰는(Override)' 속성이 있는 경우만 검사합니다.
+    if (!el.hasAttribute('aria-label') && !el.hasAttribute('aria-labelledby') && !el.hasAttribute('title') && !el.hasAttribute('alt')) {
+      return null; 
     }
 
-    // 프로그램적 네임이 설정되어 있는데, 시각적 텍스트를 포함하지 않는 경우 진단
-    if (accName && visibleText && !accName.toLowerCase().includes(visibleText.toLowerCase())) {
+    // W3C AccName 1.2 경량 알고리즘 적용 (유틸리티 사용)
+    const accName = this.utils.getAccessibleName(el);
+
+    // 3. 비교를 위한 문자열 정규화 (Normalization)
+    // 사용자 눈에 보이는 구두점, 대소문자, 다중 공백의 차이로 인해 오탐이 발생하지 않도록 합니다.
+    const normalize = (str) => {
+      if (!str) return "";
+      // 대소문자 통일, 특수기호/구두점 제거, 연속된 공백 하나로 압축
+      return String(str)
+        .toLowerCase()
+        .replace(/[.,!?'"(){}[\]<>-]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const normVisible = normalize(visibleText);
+    const normAccName = normalize(accName);
+
+    // 4. 판단: 프로그램적 네임이 존재하고, 시각적 텍스트가 포함되어 있지 않으면 오류
+    if (normAccName && normVisible && !normAccName.includes(normVisible)) {
       return this.createReport(
         el, 
         "오류", 
@@ -51,7 +70,7 @@ class Processor253 {
       );
     }
 
-    return this.createReport(el, "적절", "시각적 레이블과 프로그램적 네임이 일치하거나 포함 관계에 있습니다.", [], visibleText, accName);
+    return null;
   }
 
   createReport(el, status, message, rules, visibleText, accName) {

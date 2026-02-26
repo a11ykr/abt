@@ -9,6 +9,27 @@ const guidelineNames: Record<string, string> = {
 
 const normalizeUrl = (u: string) => u.replace(/\/$/, "").split('?')[0].split('#')[0];
 
+const formatRelativeTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMins = Math.floor(diffInMs / (1000 * 60));
+
+  if (diffInMins < 1) return '방금 전';
+  if (diffInMins < 60) return `${diffInMins}분 전`;
+  
+  const isToday = date.toDateString() === now.toDateString();
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  
+  if (isToday) return `오늘 ${timeStr}`;
+  
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return `어제 ${timeStr}`;
+  
+  return date.toLocaleDateString() + ' ' + timeStr;
+};
+
 const App = () => {
   const { items, setItems, addReport, updateItemStatus, setGuidelineScore, removeSession, clearItems, projectName } = useStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -153,6 +174,16 @@ const App = () => {
     setIsManualDashboard(false);
   }, [currentTabInfo?.url]);
 
+  // 데이터가 모두 삭제되거나 현재 세션이 사라지면 초기 화면으로 복구
+  useEffect(() => {
+    if (items.length === 0) {
+      setSelectedSessionId(null);
+      setIsManualDashboard(false);
+    } else if (selectedSessionId && !items.some(i => i.pageInfo?.scanId === selectedSessionId)) {
+      setSelectedSessionId(null);
+    }
+  }, [items, selectedSessionId]);
+
   const toggleGroup = (gid: string) => {
     setExpandedGroups(prev => 
       prev.includes(gid) ? prev.filter(id => id !== gid) : [...prev, gid]
@@ -173,12 +204,15 @@ const App = () => {
     const port = chrome.runtime.connect({ name: 'abt-sidepanel' });
     const extensionListener = (message: any) => {
       if (message.type === 'UPDATE_ABT_LIST') {
+        console.log("ABT: Data chunk received", message.data.guideline_id, message.data.pageInfo.scanId);
         setIsConnected(true);
         addReport(message.data);
       }
     };
-    chrome.runtime.onMessage.addListener(extensionListener);
+
+    // Use Port ONLY for receiving engine updates to avoid duplication
     port.onMessage.addListener(extensionListener);
+    // Use runtime only for other messages if needed
     setIsConnected(true); 
     return () => {
       chrome.runtime.onMessage.removeListener(extensionListener);
@@ -325,7 +359,7 @@ const App = () => {
         <div className={styles.headerActions}>
           <button onClick={() => { setSelectedSessionId(null); setIsManualDashboard(true); }} title="새 진단" className={styles.iconBtn}><PlusCircle size={16} /></button>
           
-          {isPopup ? (
+          {sessionItems.length > 0 && (isPopup ? (
             <button 
               onClick={() => {
                 if (typeof chrome !== 'undefined' && chrome.sidePanel) {
@@ -364,7 +398,7 @@ const App = () => {
             >
               <ExternalLink size={16} />
             </button>
-          )}
+          ))}
 
           <button onClick={clearItems} title="전체 삭제" className={styles.iconBtn}><Trash2 size={16} /></button>
           <button onClick={generateMarkdownReport} title="리포트 추출" className={`${styles.iconBtn} ${copyStatus ? styles.success : ''}`}><FileText size={16} /></button>
@@ -392,15 +426,23 @@ const App = () => {
             </button>
             {sessions.length > 0 && (
               <div className={styles.historyOption}>
-                <p>
-                  이 사이트에 대한 과거 진단 기록이 있습니다.<br/>
-                  (최근 기록: {new Date(sessions[0].timestamp).toLocaleString()})
-                </p>
-                <div className={styles.optionBtns}>
-                   <button className={styles.viewPrevBtn} onClick={() => setSelectedSessionId(sessions[0].scanId)}>
-                     최근 결과 보기
-                   </button>
+                <p>이 사이트에 대한 과거 진단 기록이 있습니다.</p>
+                <div className={styles.historyList}>
+                  {sessions.slice(0, 5).map((s, idx) => (
+                    <div key={s.scanId} className={styles.historyItem} onClick={() => setSelectedSessionId(s.scanId)}>
+                      <div className={styles.historyInfo}>
+                        <div className={styles.historyTimeRow}>
+                          <span className={styles.historyBadge}>#{sessions.length - idx}</span>
+                          <span className={styles.historyRelative}>{formatRelativeTime(s.timestamp)}</span>
+                          <span className={styles.historyAbsolute}>({new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })})</span>
+                        </div>
+                        <span className={styles.historyTitle}>{s.pageTitle}</span>
+                      </div>
+                      <ChevronRight size={14} />
+                    </div>
+                  ))}
                 </div>
+                {sessions.length > 5 && <p className={styles.moreHistory}>외 {sessions.length - 5}개의 기록이 더 있습니다.</p>}
               </div>
             )}
           </div>

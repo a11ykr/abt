@@ -1,6 +1,6 @@
 /**
- * ABT Background Service Worker (Stable & Detached Popup Mode)
- * 사이드 패널 대신 독립 팝업 창을 기본으로 사용합니다.
+ * ABT Background Service Worker (Stable)
+ * 사이드 패널을 기본 진입점으로 사용합니다.
  */
 
 const abtPorts = new Set();
@@ -18,15 +18,16 @@ chrome.runtime.onConnect.addListener((port) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (sender.tab) {
     if (message.type === 'UPDATE_ABT_LIST') {
-      // 1. Relay to ports
+      // 1. Relay to all open ports (Side Panels, Popup Windows) - Very reliable
       if (abtPorts.size > 0) {
         abtPorts.forEach(port => {
           try { port.postMessage(message); } catch (e) { abtPorts.delete(port); }
         });
       }
-      // 2. Broadcast
+      // 2. Also broadcast for other extension parts
       chrome.runtime.sendMessage(message);
     }
+
   } 
   // Relay commands from UI to Engine
   else if (message.type === 'locate-element' || message.type === 'RUN_AUDIT') {
@@ -65,14 +66,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// [기본 진입점] 아이콘 클릭 시 전용 팝업 창 열기
-chrome.action.onClicked.addListener((tab) => {
-  chrome.windows.getCurrent((currentWin) => {
-    chrome.windows.create({
-      url: chrome.runtime.getURL(`sidepanel.html?mode=popup&windowId=${currentWin.id}`),
-      type: 'popup',
-      width: 800,
-      height: 950
-    });
-  });
-});
+// 아이콘 클릭 시 사이드 패널 열기 설정 (기본값 복구)
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error(error));
+
+// 이전에 설정된 팝업이 있다면 제거하여 사이드 패널이 우선순위를 갖게 함
+chrome.action.setPopup({ popup: '' });
+

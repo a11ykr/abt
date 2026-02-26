@@ -1,16 +1,32 @@
 # ABT 브라우저 확장 프로그램 전환 작업 목록
 
-## 📋 진행 중인 작업 (Phase 1: 빌드 환경 및 기초 설정)
-- [ ] `src/extension/manifest.json` 작성 (Manifest V3, side_panel 권한 포함)
-- [ ] `vite.config.ts` 수정 (확장 프로그램 빌드 환경 구축)
-- [ ] `package.json` 스크립트 업데이트 (Extension 전용 dev/build)
+## 📋 진행 중인 작업 (Phase 4: 알고리즘 정밀 점검 및 최적화)
+- [ ] **지침별 알고리즘 전수 점검** (KWCAG 2.2 기준 논리 검증)
+    - [ ] 인식의 용이성 (1.1.1 ~ 1.4.4) 점검 (Processor-1xx.js)
+    - [ ] 운용의 용이성 (2.1.1 ~ 2.5.4) 점검 (Processor-2xx.js)
+    - [ ] 이해의 용이성 (3.1.1 ~ 3.3.4) 점검 (Processor-3xx.js)
+    - [ ] 견고성 (4.1.1 ~ 4.2.1) 점검 (Processor-4xx.js)
+- [ ] 사이드 패널 UI 스타일 최종 점검 (여백, 폰트 가독성 등) (대기)
+- [ ] 최종 빌드 및 실제 브라우저 설치 테스트 (QA) (대기)
+- [ ] README.md에 확장 프로그램 설치 및 사용법 업데이트 (대기)
+- [ ] 사이드 패널 UI 스타일 최종 점검 (여백, 폰트 가독성 등)
+- [ ] 최종 빌드 및 실제 브라우저 설치 테스트 (QA)
+- [ ] README.md에 확장 프로그램 설치 및 사용법 업데이트
+- [ ] `src/renderer`의 진입점을 확장 프로그램용으로 최적화 및 스타일 최종 점검
+- [ ] `ABT-Connector.js`의 WebSocket 통신을 `chrome.runtime`으로 교체 완료 여부 확인 (3단계 선진행 사항)
 ## ⏳ 대기 중인 작업 (Backlog)
-### Phase 2: UI (Side Panel) 이식
+### Phase 2: UI (Side Panel) 이식 (완료)
+- [x] `src/renderer`의 진입점을 확장 프로그램용으로 수정 (@2026-02-26)
+- [x] 사이드 패널 전용 HTML 파일 생성 및 연동 (@2026-02-26)
+- [x] Electron 전용 UI 요소 제거 및 스타일 조정 (@2026-02-26)
 - [ ] `src/renderer`의 진입점을 확장 프로그램용으로 수정
 - [ ] 사이드 패널 전용 HTML 파일 생성 및 연동
 - [ ] Electron 전용 UI 요소 제거 및 스타일 조정
 
-### Phase 3: 로직 및 통신 전환
+### Phase 3: 로직 및 통신 전환 (완료)
+- [x] `ABT-Connector.js`의 WebSocket 통신을 `chrome.runtime`으로 교체 (@2026-02-26)
+- [x] `useStore` (Zustand)의 영속성 계층을 `chrome.storage.local`로 변경 (@2026-02-26)
+- [x] `File System Access API` 기반 리포트 저장 기능 구현 (@2026-02-26)
 - [ ] `ABT-Connector.js`의 WebSocket 통신을 `chrome.runtime`으로 교체
 - [ ] `useStore` (Zustand)의 영속성 계층을 `chrome.storage.local`로 변경
 - [ ] `File System Access API` 기반 리포트 저장 기능 구현
@@ -19,6 +35,16 @@
 - [ ] `src/main` (Electron Main) 코드 삭제
 - [ ] `electron`, `electron-builder` 등 의존성 제거
 - [ ] 최종 빌드 및 설치 테스트
+
+## ✅ 완료된 작업 (최신)
+- [x] **레거시 코드 제거**: 구형 WebSocket 기반 팝업 파일(`popup.html`, `popup.js`) 삭제 (@2026-02-26)
+- [x] **빌드 오류 해결**: React 18과 @types/react 19 간의 버전 충돌 해결 (Types 다운그레이드) (@2026-02-26)
+- [x] **Sass 최적화**: 레거시 `@import` 방식을 `@use` 모듈 방식으로 전환하여 빌드 경고 제거 (@2026-02-26)
+- [x] **1.3.1 지침 정밀 조사**: 131 오류가 WCAG 1.3.1(표의 구성)임을 확인하고, 코드베이스 내 테이블 전수 조사 전략 수립 (@2026-02-26)
+- [x] **검증 환경 구축**: `tests/engine-test-131.html` 생성하여 표 진단 로직(Processor-131.js) 검증 준비 완료 (@2026-02-26)
+- [x] `src/extension/manifest.json` 작성 (Manifest V3, side_panel 권한 포함) (@2026-02-26)
+- [x] `vite.config.ts` 수정 (확장 프로그램 빌드 환경 구축) (@2026-02-26)
+- [x] `package.json` 스크립트 업데이트 (Extension 전용 dev/build) (@2026-02-26)
 
 ## ✅ 완료된 작업 (기존 Electron 기반 작업 이력)
 - [x] (이전 작업 기록들은 프로젝트 히스토리 보존을 위해 유지함)

@@ -1,5 +1,5 @@
 /**
- * ABT Processor 331 (Error Identification)
+ * ABT Processor 3.3.1 (Error Identification)
  * KWCAG 2.2 지침 3.3.1 오류 정정 (Error Identification)
  */
 class Processor331 {

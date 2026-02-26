@@ -148,11 +148,14 @@ export const useStore = create<ABTStore>()(
           i.pageInfo?.scanId === newItem.pageInfo?.scanId && 
           i.guideline_id === newItem.guideline_id && 
           i.elementInfo.selector === newItem.elementInfo.selector &&
-          i.elementInfo.src === newItem.elementInfo.src &&
-          i.elementInfo.alt === newItem.elementInfo.alt
+          (i.elementInfo.src || "") === (newItem.elementInfo.src || "") &&
+          (i.elementInfo.alt || "") === (newItem.elementInfo.alt || "") &&
+          i.context.smartContext === newItem.context.smartContext && // 맥락 정보까지 비교하여 더 정확히 식별
+          i.result.message === newItem.result.message
         );
 
         if (isDuplicate) {
+          // console.log(`ABT: Duplicate item blocked for scan ${newItem.pageInfo?.scanId}, gid ${newItem.guideline_id}`);
           return { items: newItems };
         }
         return { items: [...newItems, newItem] };

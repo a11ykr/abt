@@ -1,5 +1,5 @@
 /**
- * ABT Processor 251 (Single Pointer Input Support)
+ * ABT Processor 2.5.1 (Single Pointer Input Support)
  * KWCAG 2.2 지침 2.5.1 단일 포인터 입력 지원 (Single Pointer Input Support)
  */
 class Processor251 {
@@ -30,14 +30,14 @@ class Processor251 {
         tagName: el.tagName,
         selector: this.utils.getSelector(el)
       },
-      context: { smartContext: "복잡한 제스처(드래그 등)가 필요한 요소가 탐지되었습니다." },
+      context: { smartContext: "복잡한 제스처(드래그, 스와이프 등)가 쓰였을 것으로 예상되는 요소입니다." },
       result: {
         status: "검토 필요",
-        message: "이 요소는 길게 누르기, 드래그, 핀치 줌 등 복잡한 제스처가 필요할 수 있습니다. 단일 포인터(탭, 클릭)만으로도 모든 기능을 수행할 수 있는 대체 수단이 제공되는지 확인하세요.",
+        message: "이 요소에 드래그, 핀치 줌, 스와이프 등 복잡한 제스처가 사용되었다면, 단일 포인터(탭, 클릭)만으로도 모든 기능을 수행할 수 있는 대체 수단(예: 이동 버튼, 확대/축소 버튼 등)이 제공되는지 확인하세요.",
         rules: ["Rule 2.5.1 (Single Pointer Support)"]
       },
       currentStatus: "검토 필요",
-      history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "수동 검토 필요 항목 탐지" }]
+      history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "복잡한 제스처 사용 여부 및 대안 수동 검토 유도" }]
     };
   }
 }

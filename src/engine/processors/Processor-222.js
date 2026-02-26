@@ -1,5 +1,5 @@
 /**
- * ABT Processor 622
+ * ABT Processor 2.2.2
  * KWCAG 2.2 지침 2.2.2 정지 기능 제공 (Pause/Stop/Hide)
  */
 class Processor222 {
@@ -30,7 +30,7 @@ class Processor222 {
         document.body,
         "검토 필요",
         "자동으로 변경되는 콘텐츠(슬라이더, 롤링 배너 등)가 있다면 정지/이전/다음 컨트롤이 제공되는지 확인하세요.",
-        ["Rule 622 (General Manual Review)"]
+        ["Rule 222. (General Manual Review)"]
       ));
     }
 
@@ -49,11 +49,11 @@ class Processor222 {
     if (isAutoplay && !hasControls) {
       status = "오류";
       message = "자동 재생되는 미디어에 정지/제어 수단(controls)이 제공되지 않았습니다.";
-      rules.push("Rule 622 (Autoplay without Controls)");
+      rules.push("Rule 222. (Autoplay without Controls)");
     } else if (isAutoplay || isLoop) {
       status = "검토 필요";
       message = "자동 재생되거나 반복되는 미디어가 감지되었습니다. 3초 이상 지속되는 경우 사용자가 정지할 수 있는지 확인하세요.";
-      rules.push("Rule 622 (Review Autoplay/Loop)");
+      rules.push("Rule 222. (Review Autoplay/Loop)");
     }
 
     return this.createReport(el, status, message, rules);
@@ -76,7 +76,7 @@ class Processor222 {
       ? "슬라이더/캐러셀 내에 정지(Pause/Stop) 관련 컨트롤이 감지되었습니다." 
       : "자동으로 갱신되는 슬라이더/캐러셀일 경우, 정지(Pause) 버튼이 제공되는지 수동으로 확인하세요.";
       
-    return this.createReport(el, status, message, ["Rule 622 (Carousel Controls)"]);
+    return this.createReport(el, status, message, ["Rule 222. (Carousel Controls)"]);
   }
 
   createReport(el, status, message, rules) {

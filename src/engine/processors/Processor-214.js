@@ -1,5 +1,5 @@
 /**
- * ABT Processor 214 (Character Key Shortcuts)
+ * ABT Processor 2.1.4 (Character Key Shortcuts)
  * KWCAG 2.2 지침 2.1.4 문자 단축키
  */
 class Processor214 {

@@ -1,5 +1,5 @@
 /**
- * ABT Processor 811
+ * ABT Processor 4.1.1
  * KWCAG 2.2 지침 4.1.1 마크업 오류 방지 (Markup Error Prevention)
  */
 class Processor411 {

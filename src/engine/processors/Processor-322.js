@@ -1,5 +1,5 @@
 /**
- * ABT Processor 722
+ * ABT Processor 3.2.2
  * KWCAG 2.2 지침 3.2.2 데이터 입력 순서 (Data Input Order)
  */
 class Processor322 {
@@ -35,12 +35,12 @@ class Processor322 {
   analyze(el, type) {
     let status = "검토 필요";
     let message = "키보드 초점(Tab 키) 이동 순서가 논리적인지 수동으로 검토하세요.";
-    const rules = ["Rule 722 (Manual Tab Order Review)"];
+    const rules = ["Rule 322. (Manual Tab Order Review)"];
 
     if (type === "positive_tabindex") {
       status = "수정 권고";
       message = `양수 tabindex(${el.getAttribute('tabindex')})가 사용되었습니다. 이는 화면의 시각적 순서와 초점 이동 순서를 불일치하게 만들어 혼란을 줄 수 있습니다.`;
-      rules.push("Rule 722 (Avoid Positive Tabindex)");
+      rules.push("Rule 322. (Avoid Positive Tabindex)");
     }
 
     return this.createReport(el, status, message, rules);
