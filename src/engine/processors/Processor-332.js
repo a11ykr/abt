@@ -69,8 +69,6 @@ class Processor332 {
         labelMethod = "implicit wrapper label";
       }
     }
-
-    }
     
     // placeholder 단독 사용 검사 (레이블 대체 불가)
     if (!hasLabel && el.hasAttribute('placeholder') && el.getAttribute('placeholder').trim() !== "") {

@@ -170,7 +170,7 @@ window.ABTUtils = Object.assign(window.ABTUtils || {}, {
     if (isAbsolute && (left < -5000 || top < -5000)) return true;
 
     return false;
-  }
+  },
 
   /**
    * W3C AccName 1.2 기반 Accessible Name 추출 (경량화 버전)
@@ -226,6 +226,5 @@ window.ABTUtils = Object.assign(window.ABTUtils || {}, {
     }
 
     return "";
-  },
-
+  }
 });

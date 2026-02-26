@@ -37,6 +37,7 @@ class Processor321 {
         if (!hasWarning) {
           reports.push(this.createReport(el, "수정 권고", "새 창으로 열리는 링크입니다. 요소 활성화 시 컨텍스트가 변할 수 있으므로, 텍스트나 title 속성에 '새 창' 등의 사전 안내를 제공할 것을 권장합니다."));
         }
+      }
     }
 
     // 3. 페이지 로드 시 자동 포커스 (Autofocus)

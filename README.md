@@ -38,7 +38,8 @@ npm run build
 5. 브라우저 툴바의 확장 프로그램 아이콘을 클릭하여 **ABT**를 실행하면 사이드 패널이 열립니다.
 
 ## 프로젝트 구조
-- `src/extension`: 백그라운드 서비스 워커 및 매니페스트 설정
-- `src/renderer`: React 기반 Side Panel UI 레이어
-- `src/engine`: 접근성 진단 코어 엔진 및 프로세서 (Content Script 주입용)
-- `docs/plans`: 프로젝트 단계별 구현 계획서 및 히스토리
+- `src/extension/`: 백그라운드 서비스 워커 및 매니페스트 설정
+- `src/renderer/`: React 기반 Side Panel UI 레이어
+- `src/engine/`: 접근성 진단 코어 엔진 및 개별 프로세서 모듈 (Content Script)
+- `.docs/plans/`: 프로젝트 단계별 구현 계획서 및 히스토리
+- `docs/algorithms/`: 각 프로세서(진단 알고리즘)별 작동 원리 및 명세서

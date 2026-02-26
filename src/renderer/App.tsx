@@ -112,10 +112,30 @@ const App = () => {
       setIsAuditing(true);
       setLastTriggeredScanTime(Date.now());
       
-      chrome.runtime.sendMessage({ 
-        type: 'RUN_AUDIT', 
-        windowId: isPopup ? sourceWindowId : null 
-      });
+      // Ensure we query the active tab directly from the renderer if runtime relay fails
+      if (chrome.tabs) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0] && tabs[0].id) {
+            chrome.tabs.sendMessage(tabs[0].id, { type: 'RUN_AUDIT' }, (response) => {
+              if (chrome.runtime.lastError) {
+                // Content script might not be injected yet
+                chrome.scripting.executeScript({
+                  target: { tabId: tabs[0].id },
+                  files: ['engine/abt-engine.js']
+                }).then(() => {
+                  setTimeout(() => chrome.tabs.sendMessage(tabs[0].id, { type: 'RUN_AUDIT' }), 200);
+                });
+              }
+            });
+          }
+        });
+      } else {
+        // Fallback to background script relay
+        chrome.runtime.sendMessage({ 
+          type: 'RUN_AUDIT', 
+          windowId: isPopup ? sourceWindowId : null 
+        });
+      }
 
       setTimeout(() => setIsAuditing(false), 10000);
     }
@@ -185,9 +205,17 @@ const App = () => {
   }, [items, selectedSessionId]);
 
   const toggleGroup = (gid: string) => {
-    setExpandedGroups(prev => 
-      prev.includes(gid) ? prev.filter(id => id !== gid) : [...prev, gid]
-    );
+    setExpandedGroups(prev => {
+      if (prev.includes(gid)) {
+        // 사용자가 명시적으로 닫음
+        collapsedByUser.current.add(gid);
+        return prev.filter(id => id !== gid);
+      } else {
+        // 사용자가 명시적으로 엶
+        collapsedByUser.current.delete(gid);
+        return [...prev, gid];
+      }
+    });
   };
 
   const getGuidelineName = (id: string) => {
@@ -207,6 +235,11 @@ const App = () => {
         console.log("ABT: Data chunk received", message.data.guideline_id, message.data.pageInfo.scanId);
         setIsConnected(true);
         addReport(message.data);
+        
+        // Force UI to show the new scan results
+        setIsManualDashboard(false);
+        setIsAuditing(false);
+        setSelectedSessionId(message.data.pageInfo.scanId);
       }
     };
 
@@ -254,13 +287,25 @@ const App = () => {
     return result;
   }, [filteredItems]);
 
+  // 기록: 사용자가 수동으로 닫은 그룹 ID를 기억하여 강제 확장을 막음
+  const collapsedByUser = useRef<Set<string>>(new Set());
+
+  // 세션이 바뀌면 수동 닫힘 기록 초기화
+  useEffect(() => {
+    collapsedByUser.current.clear();
+  }, [selectedSessionId]);
+
   useEffect(() => {
     const errorGids = allGroupedItems
       .filter(g => g.items.some(i => i.currentStatus === '오류'))
       .map(g => g.gid);
     
     if (errorGids.length > 0) {
-      setExpandedGroups(prev => [...new Set([...prev, ...errorGids])]);
+      setExpandedGroups(prev => {
+        // 이전에 사용자가 명시적으로 닫은 적이 없는 오류 그룹만 자동 확장
+        const newGids = errorGids.filter(gid => !collapsedByUser.current.has(gid));
+        return [...new Set([...prev, ...newGids])];
+      });
     }
   }, [allGroupedItems]);
 

@@ -51,27 +51,29 @@ class Processor212 {
       reports.push(this.createGeneralReport("수정 권고", `문서 중간/하단에 위치한 요소들에 양수 값의 tabindex(${problematicTabindexes.length}개)가 존재합니다. 이는 논리적인 초점 이동 순서를 방해할 수 있으므로, 가급적 DOM 구조를 통해 순서를 제어할 것을 권장합니다.`));
     }
 
+    // 초점 표시 가시성은 자동 검출이 불가능하므로 통합 수동 검사 안내 추가
+    reports.push(this.createGeneralReport("검토 필요", "[수동 검사 안내] 페이지에 진입한 후 키보드의 Tab 키를 눌러보세요. 모든 링크와 버튼을 이동할 때 초점(점선 테두리 등)이 화면에 명확하게 시각적으로 표시되는지 육안으로 확인해야 합니다."));
+
     return reports;
   }
 
   async analyze(el) {
-    const style = window.getComputedStyle(el);
-    const hasNoOutline = style.outlineStyle === 'none' || parseInt(style.outlineWidth) === 0;
+    // [수동 검사 항목으로 전환하는 이유]
+    // window.getComputedStyle(el)은 요소가 현재 포커스를 받고 있지 않으면 :focus 상태의 스타일을 반환하지 않습니다.
+    // 따라서 정적 스캔 상태에서는 브라우저의 기본 브라우저 스타일(outline)조차 잡히지 않아, 
+    // 정상적인 요소도 "outline이 없다"고 오탐(False Positive)하게 됩니다.
+    // CSS 파싱을 통해 :focus 룰을 찾는 것은 CORS 이슈와 CSS-in-JS 환경 때문에 극히 불안정합니다.
     
-    if (hasNoOutline) {
-      return this.createReport(el, "수정 권고", "요소의 outline이 제거되어 키보드 포커스 위치를 파악하기 어렵습니다. 시각적 초점 표시(Focus Indicator)를 제공하세요.");
+    // 인라인 스타일로 outline: none을 하드코딩한 극단적인 안티 패턴만 잡고, 나머지는 수동 검사로 유도합니다.
+    const inlineStyle = el.getAttribute('style') || "";
+    const hasInlineOutlineNone = inlineStyle.replace(/\s/g, '').includes('outline:none') || inlineStyle.replace(/\s/g, '').includes('outline:0');
+
+    if (hasInlineOutlineNone) {
+      return this.createReport(el, "오류", "요소에 인라인 스타일로 outline: none이 적용되어 키보드 포커스가 강제로 제거되었습니다. 접근성에 치명적이므로 제거해야 합니다.");
     }
 
-    // 초점 표시의 명도 대비 체크 (KWCAG 2.2 신규 기준 반영 시도)
-    const outlineColor = style.outlineColor;
-    const bgColor = this.utils.getLuminance(window.getComputedStyle(document.body).backgroundColor); // 단순화된 배경색
-    const outlineLum = this.utils.getLuminance(outlineColor);
-    const contrast = this.utils.getContrastRatio(outlineLum, bgColor);
-
-    if (contrast < 3) {
-      return this.createReport(el, "검토 필요", `초점 표시(outline)의 명도 대비가 배경과 낮습니다(약 ${contrast.toFixed(2)}:1). 시각적 확인을 위해 3:1 이상의 대비를 권장합니다.`);
-    }
-
+    // 나머지 모든 focusable 요소에 대해서는 일괄적으로 단일 수동 검사 리포트만 남기기 위해 null 반환.
+    // scan() 함수에서 종합해서 리포팅합니다.
     return null;
   }
 
