@@ -18,44 +18,33 @@ window.ABTUtils = Object.assign(window.ABTUtils || {}, {
     if (!el) return "";
     if (el.id) return `#${CSS.escape(el.id)}`;
     
-    const tagName = el.tagName.toLowerCase();
-    
-    // 1. 클래스 조합이 전역적으로 유일한지 먼저 확인
-    if (el.className && typeof el.className === 'string') {
-      const classes = el.className.trim().split(/\s+/).filter(Boolean).map(c => `.${CSS.escape(c)}`).join('');
-      if (classes) {
-        const fullClassSelector = `${tagName}${classes}`;
-        try {
-          if (document.querySelectorAll(fullClassSelector).length === 1) return fullClassSelector;
-        } catch (e) {}
-      }
-    }
-
-    // 2. 고유한 경로 생성 (부모로 거슬러 올라가며 nth-child 적용)
-    let path = [];
+    const parts = [];
     let cur = el;
     while (cur && cur.nodeType === Node.ELEMENT_NODE) {
       let selector = cur.tagName.toLowerCase();
       if (cur.id) {
         selector = `#${CSS.escape(cur.id)}`;
-        path.unshift(selector);
-        break; // ID는 유일하므로 여기서 멈춤
+        parts.unshift(selector);
+        break;
+      } else {
+        let sibCount = 0;
+        let sibIndex = 0;
+        const siblings = cur.parentNode ? Array.from(cur.parentNode.children) : [];
+        for (const sib of siblings) {
+          if (sib.tagName === cur.tagName) {
+            sibCount++;
+            if (sib === cur) sibIndex = sibCount;
+          }
+        }
+        if (sibCount > 1) {
+          selector += `:nth-of-type(${sibIndex})`;
+        }
       }
-
-      const parent = cur.parentElement;
-      if (parent) {
-        const index = Array.from(parent.children).indexOf(cur) + 1;
-        selector += `:nth-child(${index})`;
-      }
-      
-      path.unshift(selector);
-      cur = parent;
-      
+      parts.unshift(selector);
+      cur = cur.parentNode;
       if (!cur || cur.tagName === 'HTML' || cur.tagName === 'BODY') break;
-      if (path.length > 15) break; 
     }
-
-    return path.join(' > ');
+    return parts.join(' > ');
   },
 
   /**
@@ -124,21 +113,23 @@ window.ABTUtils = Object.assign(window.ABTUtils || {}, {
   isHidden: function(el) {
     if (!el) return true;
     const style = window.getComputedStyle(el);
-    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return true;
     
+    // 1. 명시적 숨김 속성 체크 (display: none은 스크린 리더도 무시하므로 유지)
+    if (style.display === 'none') return true;
+    
+    // 2. visibility: hidden이나 opacity: 0은 스크린 리더가 읽을 수 있는 경우가 많으므로 지침에 따라 판단하도록 통과시킴
+    // 단, 크기가 0이면서 opacity 0인 경우는 정말 숨겨진 것으로 간주할 수 있음
     const rect = el.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return true;
+    if (rect.width === 0 && rect.height === 0 && style.opacity === '0') return true;
     
-    // 부모 요소 중 하나라도 숨겨져 있는지 체크
+    // 3. 부모 요소 체크 완화: 부모가 display: none이면 자식도 숨겨지므로 이 부분만 유지하되, 그 외엔 통과시킴
     let parent = el.parentElement;
     while (parent) {
       try {
-        const parentStyle = window.getComputedStyle(parent);
-        if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden') return true;
+        if (window.getComputedStyle(parent).display === 'none') return true;
       } catch (e) {}
       parent = parent.parentElement;
     }
-
     return false;
   },
 

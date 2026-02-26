@@ -41,6 +41,23 @@ class ABTConnector {
       return false;
     }
   }
+  /**
+   * 진단 데이터를 배치(Batch) 단위로 확장 프로그램으로 전송합니다.
+   */
+  sendBatch(items) {
+    if (!items || items.length === 0) return true;
+    try {
+      chrome.runtime.sendMessage({
+        type: 'UPDATE_ABT_LIST_BATCH',
+        items: items
+      });
+      return true;
+    } catch (e) {
+      console.error("ABT: Failed to send batch to extension", e);
+      return false;
+    }
+  }
+
 }
 
 // Global Export 및 초기화

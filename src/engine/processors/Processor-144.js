@@ -14,6 +14,8 @@ class Processor144 {
     // 1. 입력 필드 및 버튼 구분 검사
     const inputs = document.querySelectorAll('input, select, textarea');
     for (const el of inputs) {
+      if (this.utils.isHidden(el)) continue;
+
       const style = window.getComputedStyle(el);
       const border = style.borderWidth;
       const borderStyle = style.borderStyle;
@@ -29,7 +31,7 @@ class Processor144 {
     }
 
     // 2. 인접한 버튼 간의 간격 확인
-    const buttons = document.querySelectorAll('button');
+    const buttons = Array.from(document.querySelectorAll('button')).filter(el => !this.utils.isHidden(el));
     for (let i = 0; i < buttons.length - 1; i++) {
         const b1 = buttons[i];
         const b2 = buttons[i+1];

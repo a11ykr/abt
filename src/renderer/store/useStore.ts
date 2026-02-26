@@ -83,6 +83,9 @@ export interface ABTItem {
     parentTag?: string | null;
     parentText?: string;
     isDecorative?: boolean;
+    whiteSpace?: string;
+    color?: string;
+    backgroundColor?: string;
   };
   result: {
     status: string;
@@ -108,6 +111,7 @@ interface ABTStore {
   items: ABTItem[];
   projectName: string;
   addReport: (report: any) => void;
+  addReportsBatch: (reports: any[]) => void;
   setItems: (items: ABTItem[]) => void;
   updateItemStatus: (id: string, status: string, comment?: string) => void;
   removeSession: (url: string) => void;
@@ -116,52 +120,68 @@ interface ABTStore {
   setGuidelineScore: (scanId: number, gid: string, score: number) => void;
 }
 
+// Helper to generate a unique key for duplicate detection
+const getItemKey = (item: any) => {
+  const scanId = item.pageInfo?.scanId || 0;
+  const gid = item.guideline_id || "";
+  const selector = item.elementInfo?.selector || "";
+  // result.status와 message가 다르면 다른 이슈로 간주해야 함
+  const status = item.result?.status || "";
+  const message = item.result?.message || "";
+  return `${scanId}|${gid}|${selector}|${status}|${message.substring(0, 50)}`;
+};
+
 export const useStore = create<ABTStore>()(
   persist(
     (set) => ({
       items: [],
       projectName: 'Default Project',
       
-      addReport: (report) => set((state) => {
-        const pageInfo = report.pageInfo;
-        let newItems = [...state.items];
+      addReport: (report) => {
+        if (!report) return;
+        // Use the batch method for consistency and performance
+        (useStore.getState() as any).addReportsBatch([report]);
+      },
 
-        const newItem: ABTItem = {
-          ...report,
-          id: report.id || Math.random().toString(36).substr(2, 9),
-          pageInfo: report.pageInfo || {
-            url: "Unknown URL",
-            pageTitle: "Unknown Page",
-            timestamp: new Date().toISOString(),
-            scanId: 0
-          },
-          currentStatus: report.result?.status || "검토 필요",
-          finalComment: report.finalComment || "",
-          history: report.history || [{
-            timestamp: new Date().toLocaleTimeString(),
-            status: report.result?.status || "탐지",
-            comment: report.result?.message || "진단 데이터 수신"
-          }]
-        };
+      addReportsBatch: (reports) => set((state) => {
+        if (!reports || reports.length === 0) return state;
 
-        const isDuplicate = newItems.some(i => 
-          i.pageInfo?.scanId === newItem.pageInfo?.scanId && 
-          i.guideline_id === newItem.guideline_id && 
-          i.elementInfo.selector === newItem.elementInfo.selector &&
-          (i.elementInfo.src || "") === (newItem.elementInfo.src || "") &&
-          (i.elementInfo.alt || "") === (newItem.elementInfo.alt || "") &&
-          i.context.smartContext === newItem.context.smartContext && // 맥락 정보까지 비교하여 더 정확히 식별
-          i.result.message === newItem.result.message
-        );
+        const existingKeys = new Set(state.items.map(getItemKey));
+        const newItemsToAdd: ABTItem[] = [];
 
-        if (isDuplicate) {
-          // console.log(`ABT: Duplicate item blocked for scan ${newItem.pageInfo?.scanId}, gid ${newItem.guideline_id}`);
-          return { items: newItems };
-        }
-        return { items: [...newItems, newItem] };
+        reports.forEach(report => {
+          const newItem: ABTItem = {
+            ...report,
+            id: report.id || Math.random().toString(36).substr(2, 9),
+            pageInfo: report.pageInfo || {
+              url: "Unknown URL",
+              pageTitle: "Unknown Page",
+              timestamp: new Date().toISOString(),
+              scanId: 0
+            },
+            currentStatus: report.result?.status || "검토 필요",
+            finalComment: report.finalComment || "",
+            history: report.history || [{
+              timestamp: new Date().toLocaleTimeString(),
+              status: report.result?.status || "탐지",
+              comment: report.result?.message || "진단 데이터 수신"
+            }]
+          };
+
+          const key = getItemKey(newItem);
+          if (!existingKeys.has(key)) {
+            newItemsToAdd.push(newItem);
+            existingKeys.add(key); // Prevent duplicates within the same batch
+          }
+        });
+
+        if (newItemsToAdd.length === 0) return state;
+
+        return { items: [...state.items, ...newItemsToAdd] };
       }),
 
       setItems: (items) => set({ items }),
+      
       updateItemStatus: (id, status, comment) => set((state) => ({
         items: state.items.map((item) => 
           item.id === id ? { 
@@ -176,11 +196,15 @@ export const useStore = create<ABTStore>()(
           } : item
         )
       })),
+
       removeSession: (url) => set((state) => ({
         items: state.items.filter((item) => item.pageInfo?.url !== url)
       })),
+      
       clearItems: () => set({ items: [] }),
+      
       setProjectName: (projectName) => set({ projectName }),
+      
       setGuidelineScore: (scanId, gid, score) => set((state) => ({
         items: state.items.map(item => 
           (item.pageInfo?.scanId === scanId && item.guideline_id === gid) 
@@ -193,11 +217,26 @@ export const useStore = create<ABTStore>()(
       name: 'abt-storage',
       storage: createJSONStorage(() => ({
         getItem: async (name): Promise<string | null> => {
-          const res = await chrome.storage.local.get(name);
-          return (res[name] as string) || null;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            const res = await chrome.storage.local.get(name);
+            return (res[name] as string) || null;
+          }
+          return localStorage.getItem(name);
         },
-        setItem: (name, value) => chrome.storage.local.set({ [name]: value }),
-        removeItem: (name) => chrome.storage.local.remove(name),
+        setItem: (name, value) => {
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ [name]: value });
+          } else {
+            localStorage.setItem(name, value);
+          }
+        },
+        removeItem: (name) => {
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.remove(name);
+          } else {
+            localStorage.removeItem(name);
+          }
+        },
       })),
     }
   )

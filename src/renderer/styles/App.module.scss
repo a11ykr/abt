@@ -87,6 +87,7 @@
     box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
     &:hover { filter: brightness(1.1); transform: translateY(-1px); }
   }
+
   .historyOption {
     margin-top: 2rem;
     padding: 1rem;
@@ -94,20 +95,6 @@
     border: 1px solid $border;
     border-radius: 0.75rem;
     p { font-size: 11px; line-height: 1.6; color: $text-m; margin-bottom: 1rem; }
-    .optionBtns { display: flex; justify-content: center; gap: 0.5rem; }
-  }
-
-  .viewPrevBtn {
-    background: transparent;
-    color: $accent;
-    border: 1px solid $accent;
-    padding: 0.6rem 1.2rem;
-    border-radius: 0.75rem;
-    font-size: 0.85rem;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.2s;
-    &:hover { background: rgba(59, 130, 246, 0.1); transform: translateY(-1px); }
   }
 
   .historyList {
@@ -119,8 +106,8 @@
   }
 
   .historyItem {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background: $bg-s;
+    border: 1px solid $border;
     padding: 0.75rem;
     border-radius: 0.75rem;
     display: flex;
@@ -128,12 +115,12 @@
     justify-content: space-between;
     cursor: pointer;
     transition: all 0.2s;
-    color: var(--text-muted);
+    color: $text-m;
 
     &:hover {
-      border-color: var(--accent-blue);
-      color: var(--text-main);
-      background: var(--bg-hover);
+      border-color: $accent;
+      color: $text;
+      background: $bg-h;
       transform: translateX(4px);
     }
 
@@ -152,49 +139,22 @@
 
       .historyBadge {
         font-size: 8px;
-        background: var(--bg-hover);
-        color: var(--accent-blue);
+        background: $bg-h;
+        color: $accent;
         padding: 1px 4px;
         border-radius: 3px;
         font-weight: 800;
         font-family: monospace;
       }
 
-      .historyRelative {
-        font-size: 10px;
-        font-weight: 800;
-        color: var(--text-main);
-      }
-
-      .historyAbsolute {
-        font-size: 9px;
-        color: var(--text-dim);
-      }
-
-      .historyTitle {
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--text-muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+      .historyRelative { font-size: 10px; font-weight: 800; color: $text; }
+      .historyAbsolute { font-size: 9px; color: $text-d; }
+      .historyTitle { font-size: 11px; font-weight: 500; color: $text-m; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     }
   }
 
-  .moreHistory {
-    font-size: 10px;
-    color: var(--text-dim);
-    margin-top: 0.5rem;
-  }
-
-  .features {
-    margin-top: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    .featItem { font-size: 11px; color: $text-d; display: flex; align-items: center; gap: 0.3rem; }
-  }
+  .moreHistory { font-size: 10px; color: $text-d; margin-top: 0.5rem; }
+  .features { margin-top: 2rem; display: flex; flex-direction: column; gap: 0.5rem; .featItem { font-size: 11px; color: $text-d; display: flex; align-items: center; gap: 0.3rem; } }
 }
 
 .workArea {
@@ -227,32 +187,14 @@
   background: $bg-s;
   border-bottom: 1px solid $border;
   color: $text-d;
-  
   select {
-    background: transparent;
-    border: none;
-    color: $text;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    outline: none;
-    flex: 1;
-    
-    option {
-      background: $bg-s;
-      color: $text;
-    }
+    background: transparent; border: none; color: $text; font-size: 11px; font-weight: 700; cursor: pointer; outline: none; flex: 1;
+    option { background: $bg-s; color: $text; }
   }
 }
 
-.groupedList {
-  display: flex;
-  flex-direction: column;
-}
-
-.groupSection {
-  border-bottom: 1px solid $border;
-}
+.groupedList { display: flex; flex-direction: column; }
+.groupSection { border-bottom: 1px solid $border; }
 
 .groupHeader {
   padding: 0.75rem 1rem;
@@ -262,79 +204,32 @@
   cursor: pointer;
   background: $bg-s;
   transition: background 0.2s;
-  
-  &:hover {
-    background: $bg-h;
-  }
-  
-  &.hasError {
-    border-left: 3px solid $fail;
-  }
-  
+  &:hover { background: $bg-h; }
+  &.hasError { border-left: 3px solid $fail; }
   .headerLeft {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: $text-m;
-    
-    .gidLabel {
-      font-size: 11px;
-      font-weight: 700;
-      color: $text;
-    }
+    display: flex; align-items: center; gap: 0.5rem; color: $text-m;
+    .gidLabel { font-size: 11px; font-weight: 700; color: $text; }
   }
-  
-  .countBadge {
-    font-size: 10px;
-    font-weight: 800;
-    background: $bg-h;
-    color: $text-m;
-    padding: 2px 6px;
-    border-radius: 4px;
-  }
-}
-
-.naBadge {
-  font-size: 10px;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(148, 163, 184, 0.1);
-  color: $text-d;
-  border: 1px dashed $text-d;
-  cursor: help;
-}
-
-.headerRight {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  .headerRight { display: flex; align-items: center; gap: 0.75rem; }
+  .countBadge { font-size: 10px; font-weight: 800; background: $bg-h; color: $text-m; padding: 2px 6px; border-radius: 4px; }
 }
 
 .scoreBadge {
-  font-size: 10px;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-
+  font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
   &.good { background: rgba(34, 197, 94, 0.1); color: $pass; border: 1px solid transparent; }
   &.warning { background: rgba(234, 179, 8, 0.1); color: $warn; border: 1px solid transparent; }
   &.bad { background: rgba(239, 68, 68, 0.1); color: $fail; border: 1px solid transparent; }
   &.manual { background: rgba(59, 130, 246, 0.1); color: $review; border: 1px dashed $review; }
-
   &:hover {
-    transform: translateY(-2px) scale(1.05);
-    filter: brightness(1.2);
-    box-shadow: 0 4px 12px $shadow;
-    
+    transform: translateY(-2px) scale(1.05); filter: brightness(1.2); box-shadow: 0 4px 12px $shadow;
     &.good { background: rgba(34, 197, 94, 0.25); border-color: $pass; }
     &.warning { background: rgba(234, 179, 8, 0.25); border-color: $warn; }
     &.bad { background: rgba(239, 68, 68, 0.25); border-color: $fail; }
     &.manual { background: rgba(59, 130, 246, 0.25); border-color: $review; border-style: solid; }
   }
 }
+
+.naBadge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(148, 163, 184, 0.1); color: $text-d; border: 1px dashed $text-d; cursor: help; }
 
 .groupContent {
   padding: 0.75rem 1rem;
@@ -353,86 +248,96 @@
   transition: all 0.2s;
   &:hover { border-color: $text-d; }
   &.selected { border-color: $accent; background: $selected; }
-
-  .cardLayout {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
+  
+  &.judged {
+    opacity: 0.6;
+    background: rgba(15, 23, 42, 0.4);
+    padding: 0.5rem 0.75rem;
+    border-style: dashed;
+    &:hover { opacity: 1; border-style: solid; }
+    .cardTop { margin-bottom: 0.2rem; }
+    h3 { font-size: 0.7rem; font-weight: 500; color: $text-d; margin-bottom: 0; }
+    .selector { display: none; }
   }
 
+  .cardLayout { display: flex; gap: 0.75rem; align-items: flex-start; }
+
   .thumbBox {
-    width: 42px;
-    height: 42px;
-    background: $bg-p;
-    border-radius: 4px;
-    border: 1px solid $border;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    overflow: hidden;
+    width: 42px; height: 42px; background: $bg-p; border-radius: 4px; border: 1px solid $border;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
     img { width: 100%; height: 100%; object-fit: contain; }
   }
 
   .cardMain {
     flex: 1;
     min-width: 0;
+
+    .cardTop {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;
+      .quickJudge {
+        display: flex; gap: 0.3rem; opacity: 0; transition: opacity 0.2s;
+        button {
+          font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: none; cursor: pointer; color: white; transition: transform 0.1s;
+          &:active { transform: scale(0.95); }
+        }
+        .qPass { background: #16a34a; &:hover { background: #15803d; } }
+        .qFail { background: #dc2626; &:hover { background: #b91c1c; } }
+      }
+    }
+
+    h3 { font-size: 0.8rem; font-weight: 700; color: $text; margin: 0 0 0.4rem 0; line-height: 1.4; }
+    .selector { font-size: 9px; color: $text-d; font-family: monospace; }
   }
-  .cardTop {
-    display: flex; justify-content: space-between; margin-bottom: 0.5rem;
+
+  &:hover .cardMain .cardTop .quickJudge { opacity: 1; }
+
+  .markupSnippet {
+    margin-top: 0.5rem;
+    font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+    font-size: 11px;
+    background: #020617; 
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #94a3b8;
+    border: 1px solid rgba(255,255,255,0.05);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+    .attrName { color: #f472b6; font-weight: 700; }
+    .attrVal { color: #22c55e; font-weight: 600; }
   }
-  h3 { font-size: 0.8rem; font-weight: 700; color: $text; margin: 0 0 0.4rem 0; line-height: 1.4; }
-  .selector { font-size: 9px; color: $text-d; font-family: monospace; }
-}
 
-.markupSnippet {
-  margin-top: 0.4rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  background: $bg-p;
-  padding: 4px 6px;
-  border-radius: 4px;
-  color: $accent;
-  border-left: 2px solid $accent;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  filter: contrast(1.2);
-  
-  .attrName { color: #f472b6; font-weight: 700; }
-  .attrVal { color: $pass; }
-}
-
-.smartContextView {
-  margin-top: 0.5rem;
-  font-size: 10px;
-  line-height: 1.4;
-  color: $text-m;
-  background: $bg-s;
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px dashed $border;
-
-  .highlight {
-    color: $text;
-    font-weight: 800;
-    text-decoration: underline;
-    text-decoration-color: $accent;
+  .contrastPreview {
+    margin-top: 0.4rem; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 700;
+    border: 1px solid $border; display: flex; align-items: center; justify-content: center; text-align: center;
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
   }
-}
 
-.miniDetail {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid $border;
-  .ctx { font-size: 11px; color: $text-m; font-style: italic; margin-bottom: 0.75rem; }
-  .miniActions { display: flex; gap: 0.5rem; button { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 4px; background: $bg-h; border: none; color: $text-m; cursor: pointer; &:hover { background: $border; color: $text; } } }
-}
+  .smartContextView {
+    margin-top: 0.5rem; font-size: 10px; line-height: 1.4; color: $text-m; background: $bg-s; padding: 6px; border-radius: 4px; border: 1px dashed $border;
+    .highlight { color: $text; font-weight: 800; text-decoration: underline; text-decoration-color: $accent; }
+  }
 
-.miniJudge {
-  margin-top: 0.75rem;
-  textarea { width: 100%; background: $bg-p; border: 1px solid $border; border-radius: 4px; color: $text; font-size: 11px; padding: 0.5rem; min-height: 60px; }
-  .judgeBtns { display: flex; justify-content: flex-end; gap: 0.4rem; margin-top: 0.4rem; button { font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 4px; border: none; color: white; cursor: pointer; &.pBtn { background: #16a34a; } &.fBtn { background: #dc2626; } } }
+  .miniDetail {
+    margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid $border;
+    .ctx { font-size: 11px; color: $text-m; font-style: italic; margin-bottom: 0.75rem; }
+    .miniActions { display: flex; gap: 0.5rem; button { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 4px; background: $bg-h; border: none; color: $text-m; cursor: pointer; &:hover { background: $border; color: $text; } } }
+  }
+
+  .miniJudge {
+    margin-top: 0.75rem;
+    textarea { width: 100%; background: $bg-p; border: 1px solid $border; border-radius: 4px; color: $text; font-size: 11px; padding: 0.5rem; min-height: 60px; outline: none; &:focus { border-color: $accent; } }
+    .judgeBtns { 
+      display: flex; justify-content: flex-end; gap: 0.4rem; margin-top: 0.4rem; 
+      button { 
+        font-size: 10px; font-weight: 800; padding: 4px 12px; border-radius: 4px; border: none; cursor: pointer; transition: filter 0.2s;
+        &.sBtn { background: $accent; color: white; } 
+        &.cBtn { background: $bg-h; color: $text-m; }
+        &:hover { filter: brightness(1.1); }
+      } 
+    }
+  }
 }
 
 .fullPropPanel {
@@ -441,37 +346,13 @@
   .propBody { padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; section { h4 { font-size: 10px; font-weight: 800; color: $text-d; text-transform: uppercase; margin-bottom: 0.5rem; } code { background: $bg-s; padding: 0.5rem; border-radius: 4px; display: block; font-size: 11px; color: $accent; } p { font-size: 12px; line-height: 1.6; color: $text; } } }
   .histItem { margin-bottom: 1rem; padding: 0.5rem; background: $bg-s; border-radius: 4px; span { font-size: 9px; color: $text-d; } strong { display: block; font-size: 11px; color: $text-m; margin: 2px 0; } p { font-size: 11px; margin: 0; } }
 }
+
 .outlineView {
-  margin-top: 0.75rem;
-  background: $bg-p;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid $border;
+  margin-top: 0.75rem; background: $bg-p; border-radius: 0.5rem; padding: 0.5rem; display: flex; flex-direction: column; gap: 2px; max-height: 200px; overflow-y: auto; border: 1px solid $border;
   .outlineItem {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 4px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    &:hover { background: $bg-h; }
-    .level {
-      font-weight: 800;
-      color: $accent;
-      font-family: monospace;
-      width: 1.5rem;
-    }
-    .text {
-      color: $text-m;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    display: flex; align-items: center; gap: 0.5rem; padding: 4px 6px; border-radius: 4px; font-size: 10px; &:hover { background: $bg-h; }
+    .level { font-weight: 800; color: $accent; font-family: monospace; width: 1.5rem; }
+    .text { color: $text-m; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     &.h1 { background: rgba(59, 130, 246, 0.1); .level { color: #3b82f6; } }
     &.h2 { padding-left: 1rem; }
     &.h3 { padding-left: 2rem; }
@@ -479,6 +360,15 @@
     &.h5 { padding-left: 4rem; }
     &.h6 { padding-left: 5rem; }
   }
+} // .outlineView ends
+
+.loadingBar {
+  width: 200px; height: 4px; background: $bg-h; border-radius: 2px; margin: 2rem auto; overflow: hidden; position: relative;
+  .progress {
+    position: absolute; width: 40%; height: 100%; background: $accent; border-radius: 2px;
+    animation: loadingMove 1.5s infinite ease-in-out;
+  }
 }
 
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes loadingMove { 0% { left: -40%; } 100% { left: 100%; } }

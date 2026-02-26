@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Shield, Info, Search, Edit3, Clock, ChevronRight, ChevronDown, ChevronLeft, Filter, FileText, CheckCircle2, AlertCircle, Trash2, Folder, FolderOpen, FileCode2, RotateCcw, X, Image as ImageIcon, PlusCircle, ExternalLink, PanelRightClose } from 'lucide-react';
 import styles from './styles/App.module.scss';
 import { useStore, kwcagHierarchy, ABTItem } from './store/useStore';
@@ -31,7 +31,7 @@ const formatRelativeTime = (timestamp: string) => {
 };
 
 const App = () => {
-  const { items, setItems, addReport, updateItemStatus, setGuidelineScore, removeSession, clearItems, projectName } = useStore();
+  const { items, setItems, addReport, addReportsBatch, updateItemStatus, setGuidelineScore, removeSession, clearItems, projectName } = useStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [judgingId, setJudgingId] = useState<string | null>(null);
   const [tempComment, setTempComment] = useState("");
@@ -46,6 +46,7 @@ const App = () => {
   const [isManualDashboard, setIsManualDashboard] = useState(false);
   const [lastTriggeredScanTime, setLastTriggeredScanTime] = useState<number>(0);
   const [isAuditing, setIsAuditing] = useState(false);
+  const [currentGuideline, setCurrentGuideline] = useState<string | null>(null);
   
   const isPopup = useMemo(() => new URLSearchParams(window.location.search).get('mode') === 'popup', []);
   const sourceWindowId = useMemo(() => {
@@ -150,25 +151,27 @@ const App = () => {
       }
     } catch (e) {}
 
-    [...items].reverse().forEach(item => {
-      const scanId = item.pageInfo?.scanId || 0;
-      const url = item.pageInfo?.url || "Unknown URL";
+    // 최신 순으로 정렬하여 맵에 담음 (가장 최근의 pageInfo가 우선순위를 가짐)
+    const sortedItems = [...items].sort((a, b) => (b.pageInfo?.scanId || 0) - (a.pageInfo?.scanId || 0));
+    
+    sortedItems.forEach(item => {
+      const pInfo = item.pageInfo;
+      if (!pInfo || !pInfo.scanId) return;
+      
       try {
-        const itemOrigin = new URL(url).origin;
+        const itemOrigin = new URL(pInfo.url).origin;
         if (currentOrigin && itemOrigin !== currentOrigin) return;
       } catch (e) {}
 
-      if (!map.has(scanId)) {
-        map.set(scanId, item.pageInfo || {
-          url: "Unknown URL",
-          pageTitle: "Unknown Page",
-          timestamp: new Date().toISOString(),
-          scanId: scanId
+      if (!map.has(pInfo.scanId)) {
+        map.set(pInfo.scanId, {
+          ...pInfo,
+          pageTitle: pInfo.pageTitle || "Untitled Page"
         });
       }
     });
     return Array.from(map.values()).sort((a, b) => b.scanId - a.scanId);
-  }, [items, currentTabInfo?.url]);
+  }, [items, currentTabInfo]);
 
   useEffect(() => {
     if (!currentTabInfo?.url) return;
@@ -229,29 +232,39 @@ const App = () => {
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.runtime) return;
 
-    const port = chrome.runtime.connect({ name: 'abt-sidepanel' });
-    const extensionListener = (message: any) => {
-      if (message.type === 'UPDATE_ABT_LIST') {
-        console.log("ABT: Data chunk received", message.data.guideline_id, message.data.pageInfo.scanId);
+    const handleMessage = (message: any) => {
+      console.log("ABT: UI received message", message.type);
+      if (message.type === 'UPDATE_ABT_LIST_BATCH' || message.type === 'UPDATE_ABT_BATCH') {
+        setIsConnected(true);
+        addReportsBatch(message.items || message.data);
+      } else if (message.type === 'UPDATE_ABT_LIST') {
         setIsConnected(true);
         addReport(message.data);
-        
-        // Force UI to show the new scan results
-        setIsManualDashboard(false);
+      } else if (message.type === 'SCAN_PROGRESS') {
+        setCurrentGuideline(message.guideline_id);
+        setIsAuditing(true);
+      } else if (message.type === 'SCAN_FINISHED') {
+        console.log("ABT: Scan Finished", message.scanId);
         setIsAuditing(false);
-        setSelectedSessionId(message.data.pageInfo.scanId);
+        setSelectedSessionId(message.scanId);
+        setIsManualDashboard(false);
       }
     };
 
-    // Use Port ONLY for receiving engine updates to avoid duplication
-    port.onMessage.addListener(extensionListener);
-    // Use runtime only for other messages if needed
-    setIsConnected(true); 
-    return () => {
-      chrome.runtime.onMessage.removeListener(extensionListener);
-      port.disconnect();
+    const port = chrome.runtime.connect({ name: 'abt-sidepanel' });
+    port.onMessage.addListener(handleMessage);
+    
+    const runtimeListener = (message: any) => {
+      handleMessage(message);
     };
-  }, [addReport]);
+    chrome.runtime.onMessage.addListener(runtimeListener);
+    
+    return () => {
+      port.onMessage.removeListener(handleMessage);
+      port.disconnect();
+      chrome.runtime.onMessage.removeListener(runtimeListener);
+    };
+  }, [addReport, addReportsBatch]);
 
   const filteredItems = useMemo(() => {
     let result = items;
@@ -313,23 +326,14 @@ const App = () => {
     return items.filter(i => i.pageInfo?.scanId === selectedSessionId);
   }, [items, selectedSessionId]);
 
+  const handleSaveComment = (id: string) => {
+    updateItemStatus(id, items.find(i => i.id === id)?.currentStatus || "검토 필요", tempComment);
+    setJudgingId(null);
+    setTempComment("");
+  };
+
   const handleJudge = (id: string, nextStatus: string) => {
-    const nextItems = items.map(item => {
-      if (item.id === id) {
-        return {
-          ...item,
-          currentStatus: nextStatus,
-          finalComment: tempComment,
-          history: [...item.history, {
-            timestamp: new Date().toLocaleTimeString(),
-            status: nextStatus,
-            comment: tempComment || "전문가 판정 완료"
-          }]
-        };
-      }
-      return item;
-    });
-    setItems(nextItems);
+    updateItemStatus(id, nextStatus, tempComment);
     setJudgingId(null);
     setTempComment("");
   };
@@ -450,7 +454,23 @@ const App = () => {
         </div>
       </header>
 
-      {!selectedSessionId ? (
+      {isAuditing ? (
+        <div className={styles.dashboard}>
+          <div className={styles.hero}>
+            <div className={styles.heroIcon} style={{ animationDuration: '1s' }}><RotateCcw size={48} /></div>
+            <h2>Precision Audit in Progress</h2>
+            {currentGuideline && (
+              <p style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '1rem', margin: '0.8rem 0' }}>
+                검사항목 {currentGuideline} 분석 중...
+              </p>
+            )}
+            <p style={{ fontSize: '0.9rem', color: '#94a3b8', lineHeight: '1.6' }}>
+              KWCAG 2.2 표준 지침에 따라<br/>페이지의 모든 요소를 정밀 진단하고 있습니다.
+            </p>
+            <div className={styles.loadingBar}><div className={styles.progress}></div></div>
+          </div>
+        </div>
+      ) : !selectedSessionId ? (
         <div className={styles.dashboard}>
           <div className={styles.hero}>
             <div className={styles.heroIcon}><Shield size={48} /></div>
@@ -608,77 +628,99 @@ const App = () => {
                       })()}
                       <span className={styles.countBadge}>{group.items.length}</span>
                     </div>
-                  </header>
-                  
-                  {isExpanded && (
-                    <div className={styles.groupContent}>
-                      {group.items.length === 0 ? (
-                        <div className={styles.emptyState}>검출된 항목이 없습니다.</div>
-                      ) : (
-                        group.items.map((item) => (
-                          <article key={item.id} onClick={() => { setSelectedId(item.id); handleLocate(item.elementInfo.selector); }} className={`${styles.miniCard} ${selectedId === item.id ? styles.selected : ''}`}>
-                            <div className={styles.cardLayout}>
-                              {item.elementInfo.src && item.elementInfo.src !== 'N/A' && (
-                                <div className={styles.thumbBox}><img src={item.elementInfo.src} alt="미리보기" /></div>
-                              )}
-                              <div className={styles.cardMain}>
-                                <div className={styles.cardTop}>
-                                  <div className={`${styles.miniStatus} ${styles[item.currentStatus.replace(' ', '_')]}`}>{item.currentStatus}</div>
-                                </div>
-                                <h3>{item.result?.message}</h3>
-                                {item.guideline_id === '1.1.1' && (
-                                  <div className={styles.markupSnippet}>
-                                    &lt;{item.elementInfo.tagName.toLowerCase()} <span className={styles.attrName}>{(item.elementInfo as any).sourceAttr || 'alt'}</span>=<span className={styles.attrVal}>"{item.elementInfo.alt || ''}"</span> ... /&gt;
-                                  </div>
-                                )}
-                                <code className={styles.selector}>{item.elementInfo.selector}</code>
-                              </div>
-                            </div>
-                            {selectedId === item.id && (
-                              <div className={styles.miniDetail}>
-                                <div className={styles.smartContextView}>
-                                  {item.guideline_id === '1.1.1' ? (
-                                    <>
-                                      <span>...{item.context.smartContext.split(item.elementInfo.alt || "")[0]}</span>
-                                      <span className={styles.highlight}>[{((item.elementInfo as any).sourceAttr || 'alt')}="{item.elementInfo.alt || ''}"]</span>
-                                      <span>{item.context.smartContext.split(item.elementInfo.alt || "")[1]}...</span>
-                                    </>
-                                  ) : item.guideline_id === '1.3.2' && item.elementInfo.selector === 'outline' ? (
-                                    <div className={styles.outlineView}>
-                                      {(item.context as any).outline?.map((h: any, idx: number) => (
-                                        <div key={idx} className={`${styles.outlineItem} ${styles['h'+h.level]}`}>
-                                          <span className={styles.level}>H{h.level}</span>
-                                          <span className={styles.text}>{h.text || '(텍스트 없음)'}</span>
+                          </header>
+                          
+                          {isExpanded && (
+                            <div className={styles.groupContent}>
+                              {group.items.length === 0 ? (
+                                <div className={styles.emptyState}>검출된 항목이 없습니다.</div>
+                              ) : (
+                                group.items.map((item) => {
+                                  const isJudged = item.history.length > 1 || !!item.finalComment;
+                                  return (
+                                    <article 
+                                      key={item.id} 
+                                      onClick={() => { setSelectedId(item.id); handleLocate(item.elementInfo.selector); }} 
+                                      className={`${styles.miniCard} ${selectedId === item.id ? styles.selected : ''} ${isJudged ? styles.judged : ''}`}
+                                    >
+                                      <div className={styles.cardLayout}>
+                                        {!isJudged && item.elementInfo.src && item.elementInfo.src !== 'N/A' && (
+                                          <div className={styles.thumbBox}><img src={item.elementInfo.src} alt="미리보기" /></div>
+                                        )}
+                                        <div className={styles.cardMain}>
+                                          <div className={styles.cardTop}>
+                                            <div className={`${styles.miniStatus} ${styles[item.currentStatus.replace(' ', '_')]}`}>{item.currentStatus}</div>
+                                            <div className={styles.quickJudge}>
+                                              <button className={styles.qPass} onClick={(e) => { e.stopPropagation(); handleJudge(item.id, '적절'); }} title="적절로 판정">적절</button>
+                                              <button className={styles.qFail} onClick={(e) => { e.stopPropagation(); handleJudge(item.id, '오류'); }} title="오류로 판정">오류</button>
+                                            </div>
+                                          </div>
+                                          <h3 className={isJudged ? styles.judgedTitle : ''}>{item.result?.message}</h3>
+                                          {!isJudged && (
+                                            <>
+                                              {item.guideline_id === '1.1.1' && (
+                                                <div className={styles.markupSnippet}>
+                                                  &lt;{item.elementInfo.tagName.toLowerCase()} <span className={styles.attrName}>{(item.elementInfo as any).sourceAttr || 'alt'}</span>=<span className={styles.attrVal}>"{item.elementInfo.alt || ''}"</span> ... /&gt;
+                                                </div>
+                                              )}
+                                              {item.guideline_id === '1.4.3' && (item.context as any).color && (
+                                                <div className={styles.contrastPreview} style={{ color: (item.context as any).color, backgroundColor: (item.context as any).backgroundColor }}>
+                                                  Aa 가나다 (Text: {(item.context as any).color} / BG: {(item.context as any).backgroundColor})
+                                                </div>
+                                              )}
+                                            </>
+                                          )}
+                                          <code className={styles.selector}>{item.elementInfo.selector}</code>
                                         </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <span>"{item.context.smartContext}"</span>
-                                  )}
-                                </div>
-                                <div className={styles.miniActions}>
-                                  <button onClick={(e) => { e.stopPropagation(); setJudgingId(item.id); setTempComment(item.finalComment); }}>판정</button>
-                                  <button onClick={(e) => { e.stopPropagation(); setIsPropPanelOpen(true); }}>상세</button>
-                                </div>
-                              </div>
-                            )}
-                            {judgingId === item.id && (
-                              <div className={styles.miniJudge} onClick={e => e.stopPropagation()}>
-                                <textarea value={tempComment} onChange={e => setTempComment(e.target.value)} />
-                                <div className={styles.judgeBtns}>
-                                  <button onClick={() => handleJudge(item.id, '적절')} className={styles.pBtn}>적절</button>
-                                  <button onClick={() => handleJudge(item.id, '오류')} className={styles.fBtn}>오류</button>
-                                </div>
-                              </div>
-                            )}
-                          </article>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </section>
-              );
-            })}
+                                      </div>
+                                      {selectedId === item.id && (
+                                        <div className={styles.miniDetail}>
+                                          <div className={styles.smartContextView}>
+                                            {item.guideline_id === '1.1.1' ? (
+                                              <>
+                                                <span>...{item.context.smartContext.split(item.elementInfo.alt || "")[0]}</span>
+                                                <span className={styles.highlight}>[{((item.elementInfo as any).sourceAttr || 'alt')}="{item.elementInfo.alt || ''}"]</span>
+                                                <span>{item.context.smartContext.split(item.elementInfo.alt || "")[1]}...</span>
+                                              </>
+                                            ) : item.guideline_id === '1.3.2' && item.elementInfo.selector === 'outline' ? (
+                                              <div className={styles.outlineView}>
+                                                {(item.context as any).outline?.map((h: any, idx: number) => (
+                                                  <div key={idx} className={`${styles.outlineItem} ${styles['h'+h.level]}`}>
+                                                    <span className={styles.level}>H{h.level}</span>
+                                                    <span className={styles.text}>{h.text || '(텍스트 없음)'}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <span>"{item.context.smartContext}"</span>
+                                            )}
+                                          </div>
+                                          <div className={styles.miniActions}>
+                                            <button onClick={(e) => { e.stopPropagation(); setJudgingId(item.id); setTempComment(item.finalComment); }}>
+                                              <Edit3 size={12} /> {item.finalComment ? '의견 수정' : '의견 작성'}
+                                            </button>
+                                            <button onClick={(e) => { e.stopPropagation(); setIsPropPanelOpen(true); }}>상세</button>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {judgingId === item.id && (
+                                        <div className={styles.miniJudge} onClick={e => e.stopPropagation()}>
+                                          <textarea placeholder="의견을 입력하세요..." value={tempComment} onChange={e => setTempComment(e.target.value)} />
+                                          <div className={styles.judgeBtns}>
+                                            <button onClick={() => setJudgingId(null)} className={styles.cBtn}>취소</button>
+                                            <button onClick={() => handleSaveComment(item.id)} className={styles.sBtn}>저장</button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </article>
+                                  );
+                                })
+                              )}
+                            </div>
+                          )}
+                        </section>
+                      );
+                    })}
           </div>
         </div>
       )}

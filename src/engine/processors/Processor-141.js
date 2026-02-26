@@ -13,8 +13,11 @@ class Processor141 {
     const links = document.querySelectorAll('a');
 
     for (const link of links) {
+      if (this.utils.isHidden(link)) continue;
       const style = window.getComputedStyle(link);
-      const parentStyle = window.getComputedStyle(link.parentElement);
+      const parent = link.parentElement;
+      if (!parent) continue;
+      const parentStyle = window.getComputedStyle(parent);
 
       // 1. 링크 밑줄 여부 확인
       const hasUnderline = style.textDecorationLine.includes('underline') || 
@@ -23,8 +26,27 @@ class Processor141 {
 
       if (!hasUnderline && link.innerText.trim().length > 0) {
         // 부모와 색상이 다른지 확인
-        if (style.color !== parentStyle.color) {
-          reports.push(this.createReport(link, "검토 필요", "링크가 밑줄 없이 색상으로만 구분되고 있습니다. 텍스트와 배경의 명도 대비가 충분하더라도, 색을 인지하지 못하는 사용자를 위해 밑줄 등 추가적인 시각적 구분이 권장됩니다."));
+        const isColorDifferent = style.color !== parentStyle.color;
+        
+        // [개선] 문맥 판단 로직 강화
+        // A. 레이아웃 기반: 부모가 Flex/Grid면 독립 요소일 가능성이 높음
+        const isFlexOrGrid = parentStyle.display === 'flex' || parentStyle.display === 'grid';
+        
+        // B. 인라인 텍스트 기반: 직계 자식 중 비어있지 않은 '텍스트 노드'가 있는지 확인
+        const hasDirectTextSibling = Array.from(parent.childNodes).some(node => 
+          node !== link && node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0
+        );
+
+        // C. 제목/버튼 성격: 링크 자체가 블록 요소이거나 주변에 제목 요소만 있는 경우 제외
+        const isBlockLike = style.display === 'block' || style.display === 'inline-block';
+        
+        // D. 문장 내 포함 여부 최종 판단
+        // - 색상이 다르고,
+        // - 직계 텍스트 노드와 섞여 있으며 (문장의 일부),
+        // - 레이아웃상 분리된 구조(Flex/Grid)가 아니고,
+        // - 링크가 인라인 상태일 때만 경고
+        if (isColorDifferent && hasDirectTextSibling && !isFlexOrGrid && !isBlockLike) {
+          reports.push(this.createReport(link, "검토 필요", "문장이나 텍스트 뭉치 안에 포함된 링크가 밑줄 없이 색상으로만 구분되고 있습니다. 색을 인지하지 못하는 사용자를 위해 밑줄 등 추가적인 시각적 구분을 제공하세요."));
         }
       }
     }
@@ -32,13 +54,13 @@ class Processor141 {
     // 2. 배경색만 있고 텍스트가 없는 요소 (아이콘 버튼 등)
     const elementsWithBg = document.querySelectorAll('div, span, i, b');
     for (const el of elementsWithBg) {
+        if (this.utils.isHidden(el)) continue;
         const style = window.getComputedStyle(el);
         const hasBgColor = style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent';
         const hasNoText = el.innerText.trim().length === 0;
         const hasNoAria = !el.getAttribute('aria-label') && !el.getAttribute('title');
 
         if (hasBgColor && hasNoText && hasNoAria && (parseInt(style.width) > 0 || parseInt(style.height) > 0)) {
-            // 이 경우는 대체 텍스트(511)와도 겹치지만, 색상만으로 정보를 전달하는지 확인이 필요함
             reports.push(this.createReport(el, "검토 필요", "요소에 배경색은 있으나 텍스트나 레이블이 없습니다. 색상만으로 정보를 전달하고 있다면 패턴이나 텍스트를 추가하세요."));
         }
     }

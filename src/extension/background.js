@@ -16,19 +16,17 @@ chrome.runtime.onConnect.addListener((port) => {
 
 // Relay messages from Engine to UI
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log("ABT: Background message received", message.type, sender.tab ? "from tab" : "from extension");
   if (sender.tab) {
-    if (message.type === 'UPDATE_ABT_LIST') {
-      // 1. Relay to all open ports (Side Panels, Popup Windows) - Very reliable
-      if (abtPorts.size > 0) {
-        abtPorts.forEach(port => {
-          try { port.postMessage(message); } catch (e) { abtPorts.delete(port); }
-        });
-      }
-      // 2. Also broadcast for other extension parts
+    const relayTypes = ['UPDATE_ABT_LIST', 'UPDATE_ABT_LIST_BATCH', 'UPDATE_ABT_BATCH', 'SCAN_PROGRESS', 'SCAN_FINISHED'];
+    if (relayTypes.includes(message.type)) {
+      abtPorts.forEach(port => {
+        try { port.postMessage(message); } catch (e) { abtPorts.delete(port); }
+      });
       chrome.runtime.sendMessage(message);
     }
-
   } 
+
   // Relay commands from UI to Engine
   else if (message.type === 'locate-element' || message.type === 'RUN_AUDIT') {
     const targetWinId = message.windowId;
@@ -73,4 +71,3 @@ chrome.sidePanel
 
 // 이전에 설정된 팝업이 있다면 제거하여 사이드 패널이 우선순위를 갖게 함
 chrome.action.setPopup({ popup: '' });
-
