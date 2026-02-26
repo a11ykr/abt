@@ -1,6 +1,16 @@
 /**
- * ABT Processor 3.3.3
- * KWCAG 2.2 지침 3.3.3 접근 가능한 인증 (Accessible Authentication)
+ * ABT Processor 3.3.3 (Accessible Authentication)
+ * 
+ * KWCAG 2.2 지침 3.3.3 접근 가능한 인증
+ * 인증 과정에서 퍼즐 풀기, 비밀번호 암기 등 인지 능력에만 의존하는 방식 외에 대체 수단을 제공해야 합니다.
+ * 
+ * [진단 범위]
+ * - <input type="password"> 및 로그인 서식
+ * 
+ * [주요 로직]
+ * - 자동 완성 차단 탐지: autocomplete="off" 설정을 통해 비밀번호 관리자 사용을 방해하는지 확인
+ * - 붙여넣기 차단 검사: onpaste="return false" 등으로 비밀번호 복사/붙여넣기를 막는지 식별
+ * - 인지 테스트 대체: 캡차(CAPTCHA) 등에 대한 SNS 로그인, 이메일 링크 등 대체 수단 유무 검토 가이드
  */
 class Processor333 {
   constructor() {
@@ -8,6 +18,10 @@ class Processor333 {
     this.utils = window.ABTUtils;
   }
 
+  /**
+   * 로그인 및 인증 과정의 인지적 장벽 존재 여부를 진단합니다.
+   * @returns {Promise<Array>} 진단 결과 리포트 배열
+   */
   async scan() {
     // KWCAG 2.2 신설 지침 3.3.3 (접근 가능한 인증)
     // 인지 기능 테스트(비밀번호 암기, 퍼즐 풀기 등)에만 의존하지 않는 대체 수단을 제공해야 합니다.

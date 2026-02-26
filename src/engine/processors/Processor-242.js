@@ -1,13 +1,33 @@
+/**
+ * ABT Processor 2.4.2 (Page Titled)
+ * 
+ * KWCAG 2.2 지침 2.4.2 제목 제공
+ * 웹 페이지와 각 프레임에는 그 목적을 이해할 수 있는 명확한 제목을 제공해야 합니다.
+ * 
+ * [진단 범위]
+ * - <title> 요소 (Head)
+ * - <iframe>, <frame> 요소
+ * - <h1> 제목 요소 (구조적 대주제)
+ * 
+ * [주요 로직]
+ * - 누락 체크: <title> 또는 프레임의 title 속성이 비어있는 경우 탐지
+ * - 의미 없는 제목 필터링: 'untitled', '새 탭', 'iframe' 등 무의미한 기본값 사용 여부 검증
+ * - 구조적 대주제 확인: 문서의 본질을 설명하는 H1 태그의 존재 여부를 함께 진단하여 신뢰도 향상
+ */
 class Processor242 {
-constructor() {
-this.id = "2.4.2";
-this.utils = window.ABTUtils;
+  constructor() {
+    this.id = "2.4.2";
+    this.utils = window.ABTUtils;
     this.meaninglessTitles = [
       'untitled', 'document', '새 탭', 'home', 'main', 'index', 'index.html',
       'iframe', 'content', 'empty', '빈 페이지', '제목 없음'
     ];
   }
 
+  /**
+   * 페이지 및 프레임의 제목 제공 여부를 전수 조사합니다.
+   * @returns {Promise<Array>} 진단 결과 리포트 배열
+   */
   async scan() {
     const reports = [];
 
@@ -40,7 +60,6 @@ this.utils = window.ABTUtils;
     } else {
       reports.push(this.createPageReport("적절", "페이지 내에 구조적 대주제(<h1>)가 존재합니다.", "h1"));
     }
-
 
     return reports;
   }

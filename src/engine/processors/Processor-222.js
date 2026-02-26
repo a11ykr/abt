@@ -1,6 +1,18 @@
 /**
- * ABT Processor 2.2.2
- * KWCAG 2.2 지침 2.2.2 정지 기능 제공 (Pause/Stop/Hide)
+ * ABT Processor 2.2.2 (Pause, Stop, Hide)
+ * 
+ * KWCAG 2.2 지침 2.2.2 정지 기능 제공
+ * 자동으로 움직이거나 업데이트되는 콘텐츠는 사용자가 이를 일시 정지하거나 멈출 수 있어야 합니다.
+ * 
+ * [진단 범위]
+ * - <video>, <audio> 요소
+ * - 캐러셀, 슬라이더, 롤링 배너 (Common classes: .carousel, .slider, etc.)
+ * - [role="marquee"], [role="timer"] 등
+ * 
+ * [주요 로직]
+ * - 미디어 속성 체크: autoplay가 설정된 경우 controls 속성 또는 명시적 정지 버튼 유무 확인
+ * - 캐러셀 컨트롤 탐지: 하위 요소 중 '정지', 'pause', 'stop' 키워드가 포함된 버튼이 존재하는지 확인
+ * - 휴리스틱 검색: Swiper, Slick 등 유명 라이브러리의 공통 클래스명을 기반으로 자동 롤링 요소 식별
  */
 class Processor222 {
   constructor() {

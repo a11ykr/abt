@@ -1,6 +1,17 @@
 /**
  * ABT Processor 3.3.1 (Error Identification)
- * KWCAG 2.2 지침 3.3.1 오류 정정 (Error Identification)
+ * 
+ * KWCAG 2.2 지침 3.3.1 오류 정정
+ * 입력 오류가 발생한 경우, 오류가 발생한 항목과 내용을 사용자에게 텍스트로 명확히 알려주어야 합니다.
+ * 
+ * [진단 범위]
+ * - <form> 및 필수 입력 요소 ([required], [aria-required])
+ * - [aria-invalid="true"] 상태인 요소
+ * 
+ * [주요 로직]
+ * - 필수 항목 식별: 누락 시 오류를 유발할 수 있는 입력 폼 탐지
+ * - ARIA 오류 연결: aria-invalid가 설정된 경우 aria-describedby 또는 aria-errormessage를 통해 설명이 연결되어 있는지 검증
+ * - 수동 프로세스 검토: 실제 폼 제출 후 초점 이동 및 메시지 노출 여부 수동 점검 유도
  */
 class Processor331 {
   constructor() {
@@ -8,6 +19,10 @@ class Processor331 {
     this.utils = window.ABTUtils;
   }
 
+  /**
+   * 문서 내 입력 서식의 오류 처리 로직을 진단합니다.
+   * @returns {Promise<Array>} 진단 결과 리포트 배열
+   */
   async scan() {
     const reports = [];
     

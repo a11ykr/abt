@@ -1,13 +1,28 @@
 /**
  * ABT Processor 2.1.4 (Character Key Shortcuts)
+ *
  * KWCAG 2.2 지침 2.1.4 문자 단축키
- */
+ * 특수키(Ctrl, Alt 등) 조합 없이 단일 문자만으로 작동하는 단축키는 스크린 리더 사용자의 오작동을 유발하므로 이를 끄거나 변경할 수 있어야 합니다.
+ * 
+ * [진단 범위]
+ * - 인라인 키보드 이벤트 핸들러(onkeydown, onkeypress, onkeyup)가 포함된 요소
+ * - 페이지 전체의 전역 단축키 구현 여부 (가이드 제공)
+ * 
+ * [주요 로직]
+ * - 핸들러 코드 분석: 이벤트 핸들러 문자열 내에 ctrlKey, altKey, metaKey 등 특수키 검사 로직이 포함되어 있는지 정규식/키워드 매칭 수행
+ * - 단일 문자 의심 탐지: 특수키 체크 없이 키보드 이벤트를 처리하는 요소를 식별하여 제어 수단 제공 여부 검토 유도
+ * - 전역 검토 안내: 정적 분석만으로 파악하기 어려운 JS 전역 리스너에 대해 사용자에게 수동 검토 권고 발행
+*/
 class Processor214 {
   constructor() {
     this.id = "2.1.4";
     this.utils = window.ABTUtils;
   }
 
+  /**
+   * 문서 내의 단일 문자 단축키 오작동 가능성을 진단합니다.
+   * @returns {Promise<Array>} 진단 결과 리포트 배열
+   */
   async scan() {
     const reports = [];
     

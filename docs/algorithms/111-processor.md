@@ -9,7 +9,7 @@
 ## 1. 데이터 수집 단계 (Data Collection)
 대상 요소(`img`, `role="img"`, `svg` 등)를 발견하면 다음 정보를 수집한다.
 - **Target:** 대상 요소의 `alt`, `aria-label`, `title` 값.
-- **Parent Context:** 상위 요소 중 `<a>`, `<button>`, `role="button/link"` 존재 여부 및 부모의 접근성 성명(Accessible Name).
+- **Parent Context:** 상위 요소 중 `<a>`, `<button>`, `role="button/link"` 존재 여부 및 부모의 접근성 이름(Accessible Name).
 - **Smart Context:** 요소 전후 50~100자 내외의 텍스트 노드 콘텐츠.
 - **Background Images:** CSS `background-image`가 적용된 주요 컨테이너 요소로부터 이미지 URL 추출.
 - **Exhaustive Scan:** '오류' 항목뿐만 아니라 페이지 내의 모든 이미지 요소(img, svg, bg-img)를 전수 수집하여 분석 기반 데이터로 활용.

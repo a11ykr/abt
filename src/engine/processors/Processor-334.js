@@ -1,6 +1,16 @@
 /**
- * ABT Processor 3.3.4
- * KWCAG 2.2 지침 3.3.4 자동 이동 금지 (Prevent Auto-Focus/Redirect)
+ * ABT Processor 3.3.4 (Redundant Entry)
+ * 
+ * KWCAG 2.2 지침 3.3.4 반복 입력 정보
+ * 동일한 프로세스 내에서 이미 입력한 정보를 다시 요구할 경우, 자동 입력 또는 선택 기능을 제공해야 합니다.
+ * 
+ * [진단 범위]
+ * - 개인정보 및 배송지 관련 입력 필드 (이름, 주소, 연락처 등)
+ * - '이전과 동일' 체크박스
+ * 
+ * [주요 로직]
+ * - 반복 입력 필드 식별: name, id 속성 키워드 분석을 통해 사용자 정보를 묻는 필드 탐지
+ * - 자동 입력 수단 검증: autocomplete 속성 부재 또는 '동일 옵션' 체크박스 유무를 확인하여 사용자 수고를 더는지 진단
  */
 class Processor334 {
   constructor() {
@@ -8,6 +18,10 @@ class Processor334 {
     this.utils = window.ABTUtils;
   }
 
+  /**
+   * 동일 프로세스 내 중복 입력 요구 여부를 진단합니다.
+   * @returns {Promise<Array>} 진단 결과 리포트 배열
+   */
   async scan() {
     const reports = [];
     
