@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="128" height="128"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="128" height="128"><svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <rect width="128" height="128" rx="20" fill="#1E3A8A"></rect>
+  <rect x="78" y="70" width="12" height="40" rx="7.5" transform="rotate(-45 85 85)" fill="#0F172A"></rect>
+  <circle cx="55" cy="55" r="35" fill="white" stroke="#0F172A" stroke-width="8"></circle>
+  <text x="55" y="68" font-family="sans-serif" font-weight="900" font-size="35" fill="#0F172A" text-anchor="middle">AA</text>
+  <text x="105" y="68" font-family="sans-serif" font-weight="900" font-size="35" fill="#FACC15" text-anchor="middle">K</text>
+</svg></svg><style>@media (prefers-color-scheme: light) { :root { filter: none; } }
+@media (prefers-color-scheme: dark) { :root { filter: none; } }
+</style></svg>

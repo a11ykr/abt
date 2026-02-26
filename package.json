@@ -1,7 +1,7 @@
 {
-  "name": "abt-extension",
+  "name": "aak-extension",
   "version": "0.6.0",
-  "description": "A11Y Browser Tester Chrome Extension",
+  "description": "A11Y Assistant for KWCAG",
   "scripts": {
     "dev": "vite",
     "build": "vite build && cp src/extension/manifest.json dist/"

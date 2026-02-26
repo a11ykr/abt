@@ -401,7 +401,7 @@ const App = () => {
         <div className={styles.brand}>
           <Shield size={18} className={styles.logo} />
           <div className={styles.titleInfo}>
-            <h1>ABT Auditor</h1>
+            <h1>AAK Auditor</h1>
             <span>{isPopup ? 'Window' : 'Extension'}</span>
           </div>
         </div>
@@ -612,7 +612,7 @@ const App = () => {
                         }
 
                         let score = 100;
-                        const exhaustiveGids = ['1.1.1', '1.3.1', '1.4.3', '2.1.1', '2.4.2', '2.4.3', '2.5.3', '3.3.2'];
+                        const exhaustiveGids = ['1.1.1', '1.3.1', '1.4.3', '2.1.1', '2.4.2', '2.4.3', '2.5.3', '3.1.1', '3.3.2'];
                         
                         if (exhaustiveGids.includes(group.gid)) {
                           score = Math.round(((pass * 100 + review * 50) / (calcTotal * 100)) * 100);
