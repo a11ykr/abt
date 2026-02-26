@@ -581,9 +581,19 @@ const App = () => {
                           </span>
                         );
 
-                        const pass = group.items.filter(i => i.currentStatus === '적절').length;
-                        const fail = group.items.filter(i => ['오류', '부적절'].includes(i.currentStatus)).length;
-                        const review = group.items.filter(i => ['검토 필요', '수정 권고'].includes(i.currentStatus)).length;
+                        // Summary 항목(통과된 다수의 요소)의 가중치를 점수 계산에 반영
+                        let pass = 0;
+                        let fail = 0;
+                        let review = 0;
+                        let calcTotal = 0;
+
+                        group.items.forEach(i => {
+                          const weight = (i as any).isSummary && (i as any).passCount ? (i as any).passCount : 1;
+                          calcTotal += weight;
+                          if (i.currentStatus === '적절') pass += weight;
+                          else if (['오류', '부적절'].includes(i.currentStatus)) fail += weight;
+                          else if (['검토 필요', '수정 권고'].includes(i.currentStatus)) review += weight;
+                        });
                         
                         if (fail === 0 && review > 0 && group.items.some(i => i.currentStatus === '검토 필요')) {
                           return (
@@ -602,14 +612,14 @@ const App = () => {
                         }
 
                         let score = 100;
-                        const exhaustiveGids = ['1.1.1', '1.3.1', '2.1.1', '2.4.2', '2.4.3', '2.5.3', '3.3.2'];
+                        const exhaustiveGids = ['1.1.1', '1.3.1', '1.4.3', '2.1.1', '2.4.2', '2.4.3', '2.5.3', '3.3.2'];
                         
                         if (exhaustiveGids.includes(group.gid)) {
-                          score = Math.round(((pass * 100 + review * 50) / (total * 100)) * 100);
+                          score = Math.round(((pass * 100 + review * 50) / (calcTotal * 100)) * 100);
                         } else {
                           const rawScore = 100 * Math.pow(0.8, fail) * Math.pow(0.95, review);
                           score = Math.round(rawScore);
-                          if (total > 0 && pass === total) score = 100;
+                          if (calcTotal > 0 && pass === calcTotal) score = 100;
                         }
 
                         return (
