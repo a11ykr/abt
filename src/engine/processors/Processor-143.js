@@ -1,6 +1,17 @@
 /**
- * ABT Processor 1.4.3 (Contrast Ratio)
+ * ABT Processor 1.4.3 (Contrast - Minimum)
+ * 
  * KWCAG 2.2 지침 1.4.3 텍스트 콘텐츠의 명도 대비
+ * 텍스트와 배경의 명도 대비는 최소 4.5:1 (큰 텍스트는 3:1) 이상이어야 합니다.
+ * 
+ * [진단 범위]
+ * - 문서 내 모든 텍스트 노드를 포함하는 요소
+ * - 시각적으로 숨겨진 요소(isHidden)는 제외
+ * 
+ * [주요 로직]
+ * - 상대 휘도(Relative Luminance) 계산: sRGB 채널 값을 기반으로 인간의 눈이 느끼는 밝기 도출
+ * - 대비 비율 계산: (L1 + 0.05) / (L2 + 0.05) 공식을 사용하여 비율 산출
+ * - 폰트 크기 보정: 18pt 이상 또는 14pt(Bold) 이상인 경우 3:1 기준 적용
  */
 class Processor143 {
   constructor() {
@@ -8,6 +19,10 @@ class Processor143 {
     this.utils = window.ABTUtils;
   }
 
+  /**
+   * 문서 내 모든 텍스트의 명도 대비를 전수 조사합니다.
+   * @returns {Promise<Array>} 진단 결과 리포트 배열
+   */
   async scan() {
     const reports = [];
     // 모든 텍스트가 포함된 요소 탐색

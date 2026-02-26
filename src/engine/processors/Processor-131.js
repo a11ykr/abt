@@ -1,6 +1,17 @@
 /**
- * ABT Processor 1.3.1 (Table Structure)
- * KWCAG 2.2 지침 1.3.1 표의 구성 지침 진단 프로세서
+ * ABT Processor 1.3.1 (Info and Relationships - Tables)
+ * 
+ * KWCAG 2.2 지침 1.3.1 표의 구성
+ * 표는 내용과 구조를 이해할 수 있도록 제목 셀과 내용 셀을 구분하고 요약을 제공해야 합니다.
+ * 
+ * [진단 범위]
+ * - 모든 <table> 요소
+ * 
+ * [주요 로직]
+ * - 레이아웃 표 제외: <table> 내에 <th>가 하나도 없으면 디자인용 표로 간주하여 필터링
+ * - 제목 셀(<th>) 검사: <th> 부재 시 오류 판정
+ * - 캡션(<caption>) 검사: <caption> 또는 aria-describedby 부재 시 오류 판정
+ * - 데이터 연관성: scope 속성 사용을 권장하는 수정 권고 로직 포함
  */
 class Processor131 {
   constructor() {

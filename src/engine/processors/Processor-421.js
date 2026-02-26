@@ -1,6 +1,17 @@
 /**
- * ABT Processor 4.2.1
- * KWCAG 2.2 지침 4.2.1 웹 애플리케이션 접근성 준수 (Web App Accessibility - ARIA)
+ * ABT Processor 4.2.1 (Web Application Accessibility)
+ * 
+ * KWCAG 2.2 지침 4.2.1 웹 애플리케이션 접근성 준수
+ * 웹 애플리케이션은 사용자 인터페이스 구성 요소의 이름, 역할, 상태 정보를 제공해야 합니다. (ARIA 준수)
+ * 
+ * [진단 범위]
+ * - 커스텀 위젯 (role 속성이 부여된 모든 요소)
+ * - 복잡한 대화형 컴포넌트
+ * 
+ * [주요 로직]
+ * - ARIA 필수 속성 체크: 사용된 role에 대해 반드시 필요한 aria-* 속성 누락 여부 탐지
+ * - 상태 정보 변화: disabled, expanded, selected 등의 상태가 의미 있게 전달되는지 확인
+ * - 수동 검토 유도: 복잡한 웹 앱의 특성상 자동화 도구가 판단하기 어려운 논리적 오류에 대한 가이드 제공
  */
 class Processor421 {
   constructor() {

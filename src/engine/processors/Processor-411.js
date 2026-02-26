@@ -1,6 +1,15 @@
 /**
- * ABT Processor 4.1.1
- * KWCAG 2.2 지침 4.1.1 마크업 오류 방지 (Markup Error Prevention)
+ * ABT Processor 4.1.1 (Parsing)
+ * 
+ * KWCAG 2.2 지침 4.1.1 마크업 오류 방지
+ * 마크업 언어의 요소는 시작 태그와 종료 태그의 올바른 중첩 등 문법을 준수해야 합니다.
+ * 
+ * [진단 범위]
+ * - 문서 전체 DOM 구조
+ * 
+ * [주요 로직]
+ * - 중복 ID: 문서 내 동일한 ID 속성이 중복 사용되었는지 탐지
+ * - 태그 중첩: 표준에 어긋나는 요소 중첩(예: <p> 내 <div>) 발생 여부 분석 (브라우저 보정 전 기준)
  */
 class Processor411 {
   constructor() {

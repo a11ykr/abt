@@ -1,6 +1,15 @@
 /**
- * ABT Processor 3.1.1
- * KWCAG 2.2 지침 3.1.1 기본 언어 표시 (Default Language)
+ * ABT Processor 3.1.1 (Language of Page)
+ * 
+ * KWCAG 2.2 지침 3.1.1 기본 언어 표시
+ * 모든 웹 페이지에는 해당 페이지의 기본 언어를 프로그래밍적으로 명시해야 합니다.
+ * 
+ * [진단 범위]
+ * - <html> 요소의 lang 속성
+ * 
+ * [주요 로직]
+ * - lang 속성 존재 여부: <html> 태그에 lang 속성이 정의되어 있는지 확인
+ * - 유효한 코드: 'ko', 'en' 등 ISO 표준 언어 코드를 사용하는지 검증
  */
 class Processor311 {
   constructor() {

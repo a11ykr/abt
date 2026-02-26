@@ -1,6 +1,15 @@
 /**
- * ABT Processor 2.1.2 (Focus Order and Visibility)
+ * ABT Processor 2.1.2 (No Focus Trap)
+ * 
  * KWCAG 2.2 지침 2.1.2 초점 이동과 표시
+ * 키보드로 초점이 진입한 요소에서 다시 빠져나올 수 있어야 하며(Focus Trap 방지), 초점의 위치가 시각적으로 표시되어야 합니다.
+ * 
+ * [진단 범위]
+ * - 모든 대화형 요소
+ * 
+ * [주요 로직]
+ * - 아웃라인 스타일 검사: :focus 시에 outline: none 처리되어 초점이 보이지 않는 요소 탐지
+ * - 키보드 트랩: 특정 영역에 진입한 후 Esc 또는 Tab으로 탈출 불가능한 구조 분석
  */
 class Processor212 {
   constructor() {

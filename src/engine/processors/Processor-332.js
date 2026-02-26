@@ -1,6 +1,15 @@
 /**
- * ABT Processor 3.3.2
- * KWCAG 2.2 지침 3.3.2 레이블 제공 (Labeling)
+ * ABT Processor 3.3.2 (Labels or Instructions)
+ * 
+ * KWCAG 2.2 지침 3.3.2 레이블 제공
+ * 사용자가 정보를 입력하거나 제어하는 모든 구성 요소에는 명확한 레이블이나 지시사항을 제공해야 합니다.
+ * 
+ * [진단 범위]
+ * - <input>, <select>, <textarea>
+ * 
+ * [주요 로직]
+ * - <label> 연결: for-id 매칭 또는 암시적 연결 여부 확인
+ * - aria-label: 시각적 레이블이 없을 경우 프로그래밍적 대체 수단 존재 여부 검사
  */
 class Processor332 {
   constructor() {

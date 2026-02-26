@@ -1,6 +1,18 @@
 /**
  * ABT Processor 1.4.4 (Content Differentiation)
- * KWCAG 2.2 지침 1.4.4 콘텐츠 간의 구분 (Content Differentiation)
+ * 
+ * KWCAG 2.2 지침 1.4.4 콘텐츠 간의 구분
+ * 테두리, 구분선, 배경색 등을 사용하여 이웃한 콘텐츠가 시각적으로 구분되어야 합니다.
+ * 
+ * [진단 범위]
+ * - 입력 필드(Input, Select, Textarea)
+ * - 인접한 버튼 그룹
+ * - 주요 레이아웃 블록
+ * 
+ * [주요 로직]
+ * - 입력 필드 구분: 배경색과 부모 배경색의 차이, 또는 테두리 존재 여부 확인
+ * - 버튼 간격 검사: 인접한 버튼 사이의 물리적 간격을 측정하여 너무 좁은 경우 탐지
+ * - 시각적 숨김 필터: isHidden()을 사용하여 실제 보이는 콘텐츠에 대해서만 구분 검사 수행
  */
 class Processor144 {
   constructor() {

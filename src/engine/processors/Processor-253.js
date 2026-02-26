@@ -1,6 +1,16 @@
 /**
- * ABT Processor 2.5.3
- * KWCAG 2.2 지침 2.5.3 레이블과 네임 (Label in Name)
+ * ABT Processor 2.5.3 (Label in Name)
+ * 
+ * KWCAG 2.2 지침 2.5.3 레이블과 네임
+ * 텍스트 또는 텍스트 이미지가 포함된 인터페이스 구성 요소의 레이블(Label)과 보조 공학 기기가 인식하는 이름(Name)이 일치해야 합니다.
+ * 
+ * [진단 범위]
+ * - <a>, <button>, <label> 요소
+ * 
+ * [주요 로직]
+ * - 가시적 레이블 추출: 요소 표면에 보이는 텍스트 확인
+ * - 프로그래밍적 이름 추출: aria-label, aria-labelledby 등 속성 확인
+ * - 일치 여부: 가시적 레이블이 프로그래밍적 이름의 일부로 포함되어 있는지 검증
  */
 class Processor253 {
   constructor() {

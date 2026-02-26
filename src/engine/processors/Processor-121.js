@@ -1,6 +1,15 @@
 /**
- * ABT Processor 1.2.1 (Multimedia - Video/Audio)
- * 5.2.1 자막 제공 지침 진단 프로세서
+ * ABT Processor 1.2.1 (Captions - Prerecorded)
+ * 
+ * KWCAG 2.2 지침 1.2.1 자막 제공
+ * 멀티미디어 콘텐츠에는 청각 장애인을 위한 자막, 대본 또는 수어 등의 대체 수단을 제공해야 합니다.
+ * 
+ * [진단 범위]
+ * - <video>, <audio> 요소
+ * 
+ * [주요 로직]
+ * - 트랙 요소 검사: <video> 내부에 <track kind="captions" 또는 "subtitles"> 존재 여부 확인
+ * - 자막 파일 링크: <source> 태그와 별도로 자막 리소스가 정상적으로 연결되어 있는지 검증
  */
 class Processor121 {
   constructor() {

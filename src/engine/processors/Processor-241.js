@@ -1,6 +1,15 @@
 /**
- * ABT Processor 2.4.1
- * KWCAG 2.2 지침 2.4.1 건너뛰기 링크 (Skip Navigation)
+ * ABT Processor 2.4.1 (Bypass Blocks)
+ * 
+ * KWCAG 2.2 지침 2.4.1 반복 영역 건너뛰기
+ * 페이지 상단에는 본문으로 바로 이동할 수 있는 건너뛰기 링크(Skip Navigation)를 제공해야 합니다.
+ * 
+ * [진단 범위]
+ * - 페이지 최상단 링크 요소
+ * 
+ * [주요 로직]
+ * - 본문 바로가기 탐지: '본문', 'main', 'skip' 등의 키워드가 포함된 최상단 링크 확인
+ * - 타겟 유효성: 링크의 href가 가리키는 ID 요소가 실제로 존재하고 포커스 가능한지 검증
  */
 class Processor241 {
   constructor() {

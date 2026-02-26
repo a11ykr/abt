@@ -1,7 +1,7 @@
 class Processor242 {
-  constructor() {
-    this.id = "2.4.2";
-    this.utils = window.ABTUtils;
+constructor() {
+this.id = "2.4.2";
+this.utils = window.ABTUtils;
     this.meaninglessTitles = [
       'untitled', 'document', '새 탭', 'home', 'main', 'index', 'index.html',
       'iframe', 'content', 'empty', '빈 페이지', '제목 없음'
