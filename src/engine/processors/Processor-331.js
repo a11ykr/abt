@@ -39,8 +39,8 @@ class Processor331 {
 
   analyze(el, reqCount) {
     let status = "검토 필요";
-    let message = `필수 입력 항목이 포함된 서식(form)입니다. (필수 항목 ${reqCount}개). 폼 제출 시 오류가 발생하면, 오류의 위치와 원인을 텍스트로 명확히 안내하는지 수동 검토가 필요합니다.`;
-    const rules = ["Rule 3.3.1 (Form Error Identification)"];
+    let message = `[수동 검사 안내] 필수 입력 항목이 포함된 서식(form)입니다. (필수 항목 ${reqCount}개). 고의로 값을 비우거나 틀리게 입력한 후 폼을 제출해보세요. 오류 원인이 텍스트로 명확히 안내되고, 초점이 오류 항목으로 이동하는지 수동으로 확인해야 합니다.`;
+    const rules = ["Rule 3.3.1 (Form Error Identification - Manual Check)"];
 
     // Check for aria-invalid on inputs to see if they use ARIA error handling
     const invalidInputs = el.querySelectorAll('[aria-invalid="true"]');
@@ -54,15 +54,16 @@ class Processor331 {
 
       if (!hasErrorDesc) {
         status = "오류";
-        message = "aria-invalid='true'로 오류 상태가 표시된 항목 중, 구체적인 오류 메시지(aria-errormessage 등)가 연결되지 않은 항목이 있습니다.";
-        rules.push("Rule 3.3.1 (Missing Error Message)");
+        message = "aria-invalid='true'로 오류 상태가 렌더링된 항목이 있으나, 구체적인 오류 메시지(aria-errormessage 또는 aria-describedby)가 연결되지 않았습니다.";
+        rules.push("Rule 3.3.1 (Missing Error Message Connection)");
       } else {
-        status = "적절";
-        message = "오류 상태(aria-invalid)와 오류 메시지가 적절하게 ARIA 속성으로 연결되어 있습니다.";
+        status = "검토 필요";
+        message = "오류 상태(aria-invalid)와 오류 메시지가 ARIA 속성으로 연결되어 있습니다. 실제로 폼을 제출했을 때 화면에 오류 텍스트가 잘 보이고 초점이 이동하는지 최종 확인하세요.";
+        rules.push("Rule 3.3.1 (Verify ARIA Error Connection)");
       }
     }
 
-    return this.createReport(el, status, message, rules, `Required inputs: ${reqCount}`);
+    return this.createReport(el, status, message, rules, `Required inputs: ${reqCount}, invalid currently: ${invalidInputs.length}`);
   }
 
   createReport(el, status, message, rules, ctxInfo) {

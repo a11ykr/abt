@@ -1,7 +1,6 @@
 /**
  * ABT Processor 3.3.3
- * KWCAG 2.2 지침 3.3.3 콘텐츠의 선형 구조 (Linear Order - Redundant)
- * Note: KWCAG 2.2 often groups this. It's essentially 6.4.4 checked from a comprehension perspective.
+ * KWCAG 2.2 지침 3.3.3 접근 가능한 인증 (Accessible Authentication)
  */
 class Processor333 {
   constructor() {
@@ -10,38 +9,61 @@ class Processor333 {
   }
 
   async scan() {
+    // KWCAG 2.2 신설 지침 3.3.3 (접근 가능한 인증)
+    // 인지 기능 테스트(비밀번호 암기, 퍼즐 풀기 등)에만 의존하지 않는 대체 수단을 제공해야 합니다.
+    // 가장 대표적인 사례는 패스워드 입력란에서 복사/붙여넣기를 막거나(onpaste="return false"), 
+    // 패스워드 매니저의 자동 완성을 막는(autocomplete="off") 행위입니다.
+
     const reports = [];
-    
-    // Check if table layout is used for non-tabular data
-    const tables = document.querySelectorAll('table:not([role="presentation"]):not([role="none"])');
-    for (const el of tables) {
-      if (this.utils.isHidden(el)) continue;
+    const passwordInputs = document.querySelectorAll('input[type="password"]');
 
-      const ths = el.querySelectorAll('th');
-      // If table has no headers, it might be used for layout, which breaks linear comprehension
-      if (ths.length === 0) {
-        reports.push(this.analyze(el));
-      }
-    }
+    if (passwordInputs.length > 0) {
+      passwordInputs.forEach(input => {
+        if (this.utils.isHidden(input)) return;
 
-    if (reports.length === 0) {
+        let hasIssue = false;
+        let issueMsg = [];
+
+        // 1. 자동 완성 제한 검사
+        if (input.getAttribute('autocomplete') === 'off') {
+          hasIssue = true;
+          issueMsg.push("autocomplete 속성이 off로 제한되어 패스워드 매니저 사용을 방해할 수 있습니다.");
+        }
+
+        // 2. 붙여넣기 방지 검사 (인라인 속성 기준)
+        if (input.hasAttribute('onpaste') && input.getAttribute('onpaste').includes('return false')) {
+          hasIssue = true;
+          issueMsg.push("onpaste 방지로 인해 비밀번호 복사/붙여넣기가 차단되었습니다.");
+        }
+
+        if (hasIssue) {
+          reports.push(this.createReport(
+            input, 
+            "오류", 
+            issueMsg.join(" ") + " 비밀번호를 기억하지 않아도 로그인할 수 있도록 보조 수단(비밀번호 관리자, 붙여넣기)을 허용해야 합니다.",
+            ["Rule 3.3.3 (Cognitive Test Barrier)"]
+          ));
+        } else {
+          // 패스워드 필드는 정상적이나, 캡차나 다른 인지 테스트가 있을 수 있으므로 수동 검사 안내
+          reports.push(this.createReport(
+            input,
+            "검토 필요",
+            "[수동 검사 안내] 비밀번호 입력란이 감지되었습니다. 만약 이 페이지에 퍼즐 맞추기나 문자 입력 캡차(CAPTCHA) 등 추가적인 인지 테스트가 있다면, SNS 로그인이나 이메일 인증 링크 등 인지에 의존하지 않는 대체 수단이 함께 제공되는지 확인하세요.",
+            ["Rule 3.3.3 (Manual Auth Review)"]
+          ));
+        }
+      });
+    } else {
+      // 인증 폼이 아예 없는 경우 N/A 처리
       reports.push(this.createReport(
         document.body,
-        "검토 필요",
-        "페이지의 제목(Heading) 계층 구조가 논리적인 순서(h1 -> h2 -> h3)로 제공되어 콘텐츠를 순차적으로 이해할 수 있는지 수동으로 검토하세요.",
-        ["Rule 333. (Heading Hierarchy Review)"]
+        "N/A",
+        "페이지 내에 비밀번호 입력란 등 전형적인 인증(로그인) 서식이 발견되지 않았습니다. 해당 지침이 적용되지 않을 가능성이 높습니다.",
+        ["Rule 3.3.3 (No Auth Detected)"]
       ));
     }
 
     return reports;
-  }
-
-  analyze(el) {
-    const status = "검토 필요";
-    const message = "제목 셀(<th>)이 없는 표가 감지되었습니다. 화면 배치를 목적으로 <table>을 사용한 경우 스크린 리더에서 읽는 순서가 엉킬 수 있으니 role='presentation'을 추가하거나 CSS 레이아웃으로 변경하세요.";
-    const rules = ["Rule 333. (Layout Table Check)"];
-
-    return this.createReport(el, status, message, rules);
   }
 
   createReport(el, status, message, rules) {
@@ -51,7 +73,7 @@ class Processor333 {
         tagName: el.tagName,
         selector: el !== document.body ? this.utils.getSelector(el) : "body"
       },
-      context: { smartContext: el !== document.body ? this.utils.getSmartContext(el) : "콘텐츠 이해의 선형성 검토" },
+      context: { smartContext: el !== document.body ? this.utils.getSmartContext(el) : "로그인 폼 탐색" },
       result: { status, message, rules },
       currentStatus: status,
       history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: message }]

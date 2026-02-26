@@ -1,6 +1,6 @@
 /**
  * ABT Processor 4.2.1
- * KWCAG 2.2 지침 4.2.1 웹 애플리케이션 접근성 (Web App Accessibility - ARIA)
+ * KWCAG 2.2 지침 4.2.1 웹 애플리케이션 접근성 준수 (Web App Accessibility - ARIA)
  */
 class Processor421 {
   constructor() {
@@ -11,9 +11,9 @@ class Processor421 {
   async scan() {
     const reports = [];
     
-    // Find custom widgets that use ARIA roles but might lack required attributes or keyboard support
-    // (A very basic heuristic check for ARIA misuse)
-    const customWidgets = document.querySelectorAll('[role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="tab"], [role="dialog"], [role="menuitem"]');
+    // 4.2.1 지침은 매우 포괄적인 '웹 애플리케이션' 검사 항목이므로 
+    // 커스텀 위젯(ARIA roles)의 사용 패턴을 찾아내어 전문가의 수동 검사를 유도합니다.
+    const customWidgets = document.querySelectorAll('[role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="tab"], [role="dialog"], [role="menuitem"], [role="combobox"]');
     
     for (const el of customWidgets) {
       if (this.utils.isHidden(el)) continue;
@@ -23,10 +23,19 @@ class Processor421 {
     if (reports.length === 0) {
       reports.push(this.createReport(
         document.body,
-        "검토 필요",
-        "동적으로 변하는 콘텐츠나 커스텀 위젯이 있는 경우, ARIA 속성이 올바르게 사용되었는지 수동으로 검토하세요.",
-        ["Rule 421. (Manual ARIA Review)"],
+        "N/A",
+        "페이지 내에 커스텀 ARIA 위젯(role='button' 등)이 발견되지 않았습니다. 일반적인 HTML 문서일 가능성이 높습니다.",
+        ["Rule 4.2.1 (No Custom Widgets)"],
         "없음"
+      ));
+    } else {
+      // 위젯이 여러 개 발견되었어도, 가장 대표적인 검토 안내 리포트를 추가합니다.
+      reports.push(this.createReport(
+        document.body,
+        "검토 필요",
+        `[수동 검사 안내] 커스텀 ARIA 위젯이 총 ${reports.length}개 발견되었습니다. 이 위젯들이 1) 키보드만으로 조작 가능한지, 2) 상태 변화(aria-expanded, aria-checked 등)가 스크린 리더에 정확히 전달되는지 수동으로 검토하세요.`,
+        ["Rule 4.2.1 (Manual ARIA Review)"],
+        "웹 애플리케이션 종합 검토"
       ));
     }
 
@@ -35,16 +44,18 @@ class Processor421 {
 
   analyze(el) {
     let status = "검토 필요";
-    let message = `역할(role="${el.getAttribute('role')}")이 부여된 커스텀 위젯입니다. 상태 변화(예: aria-expanded, aria-checked)가 스크린 리더에 잘 전달되고 키보드로 조작 가능한지 확인하세요.`;
-    const rules = ["Rule 421. (Custom Widget Review)"];
-    
     const role = el.getAttribute('role');
-
-    // Basic heuristic: Custom interactive widgets should generally have a tabindex to be focusable
-    if (['button', 'link', 'checkbox', 'switch', 'tab', 'menuitem'].includes(role) && !el.hasAttribute('tabindex') && !['A', 'BUTTON', 'INPUT'].includes(el.tagName)) {
+    let message = `역할(role="${role}")이 부여된 커스텀 위젯입니다. 상태 변화가 스크린 리더에 잘 전달되고 키보드로 조작 가능한지 확인하세요.`;
+    const rules = ["Rule 4.2.1 (Custom Widget Review)"];
+    
+    // 기본 휴리스틱: 커스텀 대화형 위젯은 포커스를 받을 수 있어야 함 (tabindex)
+    const needsTabindex = ['button', 'link', 'checkbox', 'switch', 'tab', 'menuitem'].includes(role);
+    const hasNativeFocus = ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName);
+    
+    if (needsTabindex && !hasNativeFocus && !el.hasAttribute('tabindex')) {
       status = "수정 권고";
-      message = `역할(role="${role}")이 부여되었으나 초점을 받을 수 없습니다(tabindex 누락). 키보드 접근성을 확인하세요.`;
-      rules.push("Rule 421. (Missing Tabindex on Widget)");
+      message = `역할(role="${role}")이 부여되었으나 초점을 받을 수 없습니다(tabindex 누락). 키보드 접근성이 심각하게 훼손되었을 가능성이 있습니다.`;
+      rules.push("Rule 4.2.1 (Missing Tabindex on Widget)");
     }
 
     return this.createReport(el, status, message, rules, `Role: ${role}`);

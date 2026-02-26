@@ -9,10 +9,17 @@ class Processor332 {
   }
 
   async scan() {
-    const inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]), select, textarea');
+    // 입력 서식 및 ARIA 입력 롤을 가진 요소 모두 포함 (submit, reset, hidden 등 제외)
+    const inputs = document.querySelectorAll(`
+      input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]), 
+      select, 
+      textarea,
+      [role="textbox"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="searchbox"]
+    `);
     const reports = [];
 
     for (const el of inputs) {
+      // 화면에서 숨겨져 있고, focus도 받을 수 없는 상태면 제외
       if (this.utils.isHidden(el)) continue;
       reports.push(this.analyze(el));
     }
@@ -61,6 +68,16 @@ class Processor332 {
         hasLabel = true;
         labelMethod = "implicit wrapper label";
       }
+    }
+
+    }
+    
+    // placeholder 단독 사용 검사 (레이블 대체 불가)
+    if (!hasLabel && el.hasAttribute('placeholder') && el.getAttribute('placeholder').trim() !== "") {
+      status = "오류";
+      message = "레이블 없이 placeholder 속성만 제공되었습니다. placeholder는 힌트일 뿐 레이블을 대체할 수 없으므로 <label> 또는 title, aria-label을 추가하세요.";
+      rules.push("Rule 3.3.2 (Placeholder is not a label)");
+      return this.createReport(el, status, message, rules, "placeholder only");
     }
 
     if (!hasLabel && el.hasAttribute('title') && el.getAttribute('title').trim() !== "") {

@@ -11,32 +11,80 @@ class Processor334 {
   async scan() {
     const reports = [];
     
-    // Check for autofocus attribute
-    const autofocusElements = document.querySelectorAll('[autofocus]');
+    // 1. 페이지 내 주요 개인정보/배송지 관련 입력 필드 (반복 입력이 잦은 필드) 탐지
+    // name이나 id 속성에 특정 키워드가 들어간 요소들
+    const redundantKeywords = ['name', '이름', 'email', '이메일', 'phone', 'tel', '전화', 'address', '주소', 'zip', '우편번호'];
+    const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], textarea');
     
-    for (const el of autofocusElements) {
-      if (this.utils.isHidden(el)) continue;
-      reports.push(this.analyze(el));
+    let suspectInputs = [];
+    for (const input of inputs) {
+      if (this.utils.isHidden(input)) continue;
+      const nameAttr = (input.getAttribute('name') || "").toLowerCase();
+      const idAttr = (input.getAttribute('id') || "").toLowerCase();
+      
+      if (redundantKeywords.some(kw => nameAttr.includes(kw) || idAttr.includes(kw))) {
+        suspectInputs.push(input);
+      }
     }
 
-    if (reports.length === 0) {
-      reports.push(this.createReport(
-        document.body,
-        "검토 필요",
-        "페이지 진입 시 사용자의 의지와 무관하게 새 창이 열리거나 초점이 이동하는 기능이 있는지 수동으로 확인하세요.",
-        ["Rule 334. (Manual Context Change Review)"]
-      ));
+    // 2. '이전 정보와 동일' 같은 체크박스 탐지
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    let hasSameAsCheckbox = false;
+    for (const cb of checkboxes) {
+      const labelText = this.utils.getAccessibleName(cb) || cb.parentElement?.innerText || "";
+      if (labelText.includes('동일') || labelText.includes('같음') || labelText.includes('same as')) {
+        hasSameAsCheckbox = true;
+        break;
+      }
+    }
+
+    if (suspectInputs.length > 0) {
+      // 반복 가능 필드가 발견되었을 때, autocomplete 속성이 누락되었는지 확인
+      const missingAutocomplete = suspectInputs.filter(el => !el.hasAttribute('autocomplete') || el.getAttribute('autocomplete') === 'off');
+      
+      if (missingAutocomplete.length > 0 && !hasSameAsCheckbox) {
+        reports.push({
+          guideline_id: this.id,
+          elementInfo: { tagName: "form/input", selector: this.utils.getSelector(missingAutocomplete[0]) },
+          context: { smartContext: `이름/주소 등 반복 입력 의심 필드 ${missingAutocomplete.length}건 발견됨` },
+          result: {
+            status: "검토 필요",
+            message: "[수동 검사 안내] 이름, 연락처, 주소 등을 입력하는 필드가 발견되었으나 autocomplete 속성이 없으며 '이전 정보와 동일' 체크박스도 보이지 않습니다. 만약 다단계 폼(주문 등)에서 이전 단계에 입력했던 정보를 다시 묻는 것이라면 오류입니다. 수동으로 프로세스를 확인하세요.",
+            rules: ["Rule 3.3.4 (Missing Autocomplete & Checkbox)"]
+          },
+          currentStatus: "검토 필요",
+          history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "반복 입력 가능성 높음" }]
+        });
+      } else {
+        reports.push({
+          guideline_id: this.id,
+          elementInfo: { tagName: "form/input", selector: "body" },
+          context: { smartContext: `autocomplete 부여됨 또는 '동일' 체크박스 감지됨` },
+          result: {
+            status: "검토 필요",
+            message: "[수동 검사 안내] 반복 입력 필드에 autocomplete 속성이나 '이전과 동일' 옵션이 발견되었습니다. 실제로 폼을 작성할 때 이전 정보가 잘 채워지는지 수동으로 확인하세요.",
+            rules: ["Rule 3.3.4 (Verify Auto-population)"]
+          },
+          currentStatus: "검토 필요",
+          history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "대체 수단 존재 의심, 실제 동작 확인 필요" }]
+        });
+      }
+    } else {
+      reports.push({
+        guideline_id: this.id,
+        elementInfo: { tagName: "document", selector: "body" },
+        context: { smartContext: "반복 입력 의심 폼 없음" },
+        result: {
+          status: "N/A",
+          message: "페이지 내에서 이름, 주소, 연락처 등 프로세스 간 반복 입력이 주로 발생하는 입력 서식을 발견하지 못했습니다. 단일 프로세스일 가능성이 높습니다.",
+          rules: ["Rule 3.3.4 (No Suspect Forms)"]
+        },
+        currentStatus: "N/A",
+        history: [{ timestamp: new Date().toLocaleTimeString(), status: "탐지", comment: "특이 사항 없음" }]
+      });
     }
 
     return reports;
-  }
-
-  analyze(el) {
-    let status = "검토 필요";
-    let message = "autofocus 속성이 사용되었습니다. 페이지가 로드될 때 사용자의 의지와 상관없이 초점이 이동하여 혼란을 줄 수 있으므로 사용을 지양하세요.";
-    const rules = ["Rule 334. (Autofocus Attribute)"];
-
-    return this.createReport(el, status, message, rules);
   }
 
   createReport(el, status, message, rules) {

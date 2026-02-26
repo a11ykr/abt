@@ -15,22 +15,28 @@ class Processor321 {
     for (const el of allElements) {
       if (this.utils.isHidden(el)) continue;
 
-      // 1. 인라인 포커스 이벤트 핸들러 확인 (제한적이지만 탐지 가능)
+      // 1. 인라인 이벤트 핸들러 확인 (onfocus, onblur, onchange)
+      // 주의: addEventListener로 바인딩된 스크립트는 확장에서 감지할 수 없으므로 제한적입니다.
       const hasOnFocus = el.hasAttribute('onfocus');
       const hasOnBlur = el.hasAttribute('onblur');
+      const hasOnChange = el.hasAttribute('onchange');
 
-      if (hasOnFocus || hasOnBlur) {
-        reports.push(this.createReport(el, "검토 필요", "요소에 포커스(onfocus/onblur) 관련 이벤트가 감지되었습니다. 사용자가 예측하지 못한 창 열림, 양식 전송, 미디어 재생 등의 컨텍스트 변화가 초점 이동만으로 발생하지 않는지 확인하세요."));
+      if (hasOnFocus || hasOnBlur || hasOnChange) {
+        reports.push(this.createReport(el, "검토 필요", `요소에 인라인 이벤트(onfocus/onblur/onchange)가 감지되었습니다. 요소에 초점이 가거나 입력값이 변경될 때 사용자가 예측하지 못한 창 열림, 양식 전송 등의 컨텍스트 변화가 발생하지 않는지 수동으로 확인하세요.`));
       }
-
-      // 2. target="_blank" 이면서 경고 메시지 없는 링크 (3.2.1의 확장된 검토 사례)
+      // 2. target="_blank" 이면서 경고 메시지 없는 링크
       if (el.tagName.toLowerCase() === 'a' && el.getAttribute('target') === '_blank') {
-        const text = el.innerText.trim();
-        const hasWarning = text.includes('새 창') || text.includes('new window') || el.hasAttribute('aria-label');
+        const text = (el.innerText || "").trim().toLowerCase();
+        const title = (el.getAttribute('title') || "").toLowerCase();
+        const ariaLabel = (el.getAttribute('aria-label') || "").toLowerCase();
+        
+        const hasWarning = text.includes('새창') || text.includes('새 창') || text.includes('new window') ||
+                           title.includes('새창') || title.includes('새 창') || title.includes('new window') ||
+                           ariaLabel.includes('새창') || ariaLabel.includes('새 창');
+        
         if (!hasWarning) {
-          reports.push(this.createReport(el, "수정 권고", "새 창으로 열리는 링크입니다. 초점을 받았을 때 경고 없이 컨텍스트가 변할 수 있으므로, 링크 텍스트에 '새 창' 등의 안내를 포함할 것을 권장합니다."));
+          reports.push(this.createReport(el, "수정 권고", "새 창으로 열리는 링크입니다. 요소 활성화 시 컨텍스트가 변할 수 있으므로, 텍스트나 title 속성에 '새 창' 등의 사전 안내를 제공할 것을 권장합니다."));
         }
-      }
     }
 
     // 3. 페이지 로드 시 자동 포커스 (Autofocus)

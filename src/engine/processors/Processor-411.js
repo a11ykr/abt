@@ -11,13 +11,19 @@ class Processor411 {
   async scan() {
     const reports = [];
     
-    // Check for duplicate IDs which is a common markup error affecting a11y
+    // 4.1.1 (마크업 오류 방지) 지침은 중복 ID, 열고 닫는 태그 불일치 등 파싱 오류를 검사합니다.
+    // 브라우저의 DOM 트리는 이미 잘못된 태그를 자동 보정하므로, DOM API로는 완벽한 구문 검사가 불가능합니다.
+    // 따라서, DOM 트리에 명확히 남는 치명적인 접근성 오류인 "ID 중복"을 중점적으로 검사합니다.
+    
     const allElementsWithId = document.querySelectorAll('[id]');
     const idMap = new Map();
     const duplicateIds = new Set();
 
     for (const el of allElementsWithId) {
-      const id = el.id;
+      // 숨겨진 요소라도 ID 중복은 aria-labelledby 등 참조를 망가뜨리므로 검사 대상에 포함
+      const id = el.id.trim();
+      if (id === "") continue;
+
       if (idMap.has(id)) {
         duplicateIds.add(id);
       } else {
@@ -27,28 +33,25 @@ class Processor411 {
 
     if (duplicateIds.size > 0) {
       for (const id of duplicateIds) {
-        // Find all elements with this duplicate ID
         const duplicates = document.querySelectorAll(`[id="${id}"]`);
-        // Just report the first one as representative
-        reports.push(this.analyze(duplicates[0], id));
+        // 첫 번째 요소만 대표로 리포팅하고, 몇 개가 중복되었는지 안내
+        reports.push(this.analyze(duplicates[0], id, duplicates.length));
       }
-    }
-
-    if (reports.length === 0) {
+    } else {
       reports.push(this.createReport(
         document.body,
         "검토 필요",
-        "중복된 ID 속성은 발견되지 않았습니다. W3C Nu HTML Checker 등 외부 도구를 이용해 여닫는 태그, 속성 중복 등의 마크업 오류를 확인하세요.",
-        ["Rule 4.1.1 (Manual Markup Review)"]
+        "[수동 검사 안내] 중복된 ID 속성은 발견되지 않았습니다. 단, 브라우저가 자동 보정한 태그 중첩 오류나 속성 중복 선언 등은 확장 프로그램이 완벽히 잡아낼 수 없으므로, W3C Nu HTML Checker 등 외부 도구를 이용해 최종 마크업 유효성을 검사하세요.",
+        ["Rule 4.1.1 (Manual Markup Review Required)"]
       ));
     }
 
     return reports;
   }
 
-  analyze(el, duplicateId) {
+  analyze(el, duplicateId, count) {
     const status = "오류";
-    const message = `문서 내에 중복된 ID 속성값("${duplicateId}")이 존재합니다. ID는 문서 내에서 유일해야 하며, 동일한 값을 한 번만 사용할 수 있습니다.`;
+    const message = `문서 내에 중복된 ID 속성값("${duplicateId}")이 ${count}개 존재합니다. ID는 문서 내에서 유일해야 하며, 중복 시 aria-labelledby나 label 연결 등 보조기기의 탐색을 심각하게 방해합니다.`;
     const rules = ["Rule 4.1.1 (Duplicate ID)"];
 
     return this.createReport(el, status, message, rules);
