@@ -558,13 +558,6 @@ const App = () => {
         </div>
       ) : (
         <div className={styles.workArea}>
-          <div className={styles.statsSummary}>
-            <div className={`${styles.statLine} ${statusFilter === 'ALL' ? styles.active : ''}`} onClick={() => setStatusFilter('ALL')}>전체 <span>{sessionItems.length}</span></div>
-            <div className={`${styles.statLine} ${styles.fail} ${statusFilter === '오류' ? styles.active : ''}`} onClick={() => setStatusFilter('오류')}>오류 <span>{sessionItems.filter(i => i.currentStatus === '오류').length}</span></div>
-            <div className={`${styles.statLine} ${styles.review} ${statusFilter === '검토 필요' ? styles.active : ''}`} onClick={() => setStatusFilter('검토 필요')}>검토 필요 <span>{sessionItems.filter(i => i.currentStatus === '검토 필요').length}</span></div>
-            <div className={`${styles.statLine} ${styles.pass} ${statusFilter === '적절' ? styles.active : ''}`} onClick={() => setStatusFilter('적절')}>검토 완료 <span>{sessionItems.filter(i => i.currentStatus === '적절').length}</span></div>
-          </div>
-
           <div className={styles.sessionSelector}>
             <Clock size={12} />
             <select value={selectedSessionId || ""} onChange={(e) => setSelectedSessionId(Number(e.target.value))}>
@@ -574,6 +567,13 @@ const App = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className={styles.statsSummary}>
+            <div className={`${styles.statLine} ${statusFilter === 'ALL' ? styles.active : ''}`} onClick={() => setStatusFilter('ALL')}>전체 <span>{sessionItems.length}</span></div>
+            <div className={`${styles.statLine} ${styles.fail} ${statusFilter === '오류' ? styles.active : ''}`} onClick={() => setStatusFilter('오류')}>오류 <span>{sessionItems.filter(i => i.currentStatus === '오류').length}</span></div>
+            <div className={`${styles.statLine} ${styles.review} ${statusFilter === '검토 필요' ? styles.active : ''}`} onClick={() => setStatusFilter('검토 필요')}>검토 필요 <span>{sessionItems.filter(i => i.currentStatus === '검토 필요').length}</span></div>
+            <div className={`${styles.statLine} ${styles.pass} ${statusFilter === '적절' ? styles.active : ''}`} onClick={() => setStatusFilter('적절')}>검토 완료 <span>{sessionItems.filter(i => i.currentStatus === '적절').length}</span></div>
           </div>
           
           <div className={styles.groupedList}>
