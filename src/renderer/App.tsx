@@ -41,7 +41,7 @@ const formatRelativeTime = (timestamp: string) => {
 };
 
 const App = () => {
-  const { items, setItems, addReport, addReportsBatch, updateItemStatus, setGuidelineScore, removeSession, clearItems, projectName } = useStore();
+  const { items, setItems, addReport, addReportsBatch, updateItemStatus, setGuidelineScore, removeSession, removeSessionById, clearItems, projectName } = useStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [judgingId, setJudgingId] = useState<string | null>(null);
   const [tempComment, setTempComment] = useState("");
@@ -196,10 +196,14 @@ const App = () => {
       const pInfo = item.pageInfo;
       if (!pInfo || !pInfo.scanId) return;
       
+      // (선택 사항) 현재 사이트의 기록만 보고 싶다면 아래 필터를 유지하세요.
+      // 하지만 사용자가 '저장이 안 된다'고 느낄 수 있으므로 일단 모든 기록을 보여주도록 필터를 제거합니다.
+      /*
       try {
         const itemOrigin = new URL(pInfo.url).origin;
         if (currentOrigin && itemOrigin !== currentOrigin) return;
       } catch (e) {}
+      */
 
       if (!map.has(pInfo.scanId)) {
         map.set(pInfo.scanId, {
@@ -431,12 +435,19 @@ const App = () => {
     });
   };
 
+  const handleDeleteSession = (e: React.MouseEvent, scanId: number) => {
+    e.stopPropagation();
+    if (window.confirm("이 진단 기록을 삭제하시겠습니까?")) {
+      removeSessionById(scanId);
+    }
+  };
+
   const selectedItem = items.find(i => i.id === selectedId);
 
   const guidelineData = selectedGuidelineInfo && standardItemsDict ? standardItemsDict[selectedGuidelineInfo] : null;
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${isPopup ? styles.isPopup : ''}`}>
       <header className={styles.extHeader}>
         <div className={styles.brand}>
           <Shield size={18} className={styles.logo} />
@@ -531,9 +542,9 @@ const App = () => {
             </button>
             {sessions.length > 0 && (
               <div className={styles.historyOption}>
-                <p>이 사이트에 대한 과거 진단 기록이 있습니다.</p>
+                <p>과거 진단 기록 ({sessions.length}건)</p>
                 <div className={styles.historyList}>
-                  {sessions.slice(0, 5).map((s, idx) => (
+                  {sessions.map((s, idx) => (
                     <div key={s.scanId} className={styles.historyItem} onClick={() => setSelectedSessionId(s.scanId)}>
                       <div className={styles.historyInfo}>
                         <div className={styles.historyTimeRow}>
@@ -543,11 +554,19 @@ const App = () => {
                         </div>
                         <span className={styles.historyTitle}>{s.pageTitle}</span>
                       </div>
-                      <ChevronRight size={14} />
+                      <div className={styles.historyActions}>
+                        <button 
+                          className={styles.deleteBtn} 
+                          onClick={(e) => handleDeleteSession(e, s.scanId)}
+                          title="삭제"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <ChevronRight size={14} />
+                      </div>
                     </div>
                   ))}
                 </div>
-                {sessions.length > 5 && <p className={styles.moreHistory}>외 {sessions.length - 5}개의 기록이 더 있습니다.</p>}
               </div>
             )}
           </div>
@@ -852,7 +871,7 @@ const App = () => {
         </div>
       )}
       {/* 하단 플로팅 전문가 도구바 (Expert Tools) */}
-      {selectedSessionId && !isAuditing && (
+      {selectedSessionId && !isAuditing && !isPopup && (
         <div className={styles.expertToolbar}>
           <div className={styles.toolbarInner}>
             <div className={styles.toolGroup}>

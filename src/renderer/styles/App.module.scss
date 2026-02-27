@@ -13,6 +13,7 @@
 }
 
 .extHeader {
+  flex-shrink: 0;
   padding: 0.75rem 1rem;
   background-color: $bg-s;
   border-bottom: 1px solid $border;
@@ -25,8 +26,10 @@
     align-items: center;
     gap: 0.5rem;
     .logo { color: $accent; }
-    h1 { font-size: $text-sm; font-weight: 800; margin: 0; color: $text; }
-    span { font-size: $text-xs; color: $text-d; font-weight: 600; }
+    .titleInfo {
+      h1 { font-size: $text-sm; font-weight: 800; margin: 0; color: $text; }
+      span { font-size: $text-xs; color: $text-d; font-weight: 600; }
+    }
   }
 
   .headerActions {
@@ -40,7 +43,7 @@
   border: none;
   color: $text-d;
   cursor: pointer;
-  padding: $space-1 $space-2; // Horizontal padding for label
+  padding: $space-1 $space-2;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
@@ -55,24 +58,38 @@
 
 .dashboard {
   flex: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: $space-8;
+  overflow-y: auto;
+  min-height: 0; 
+  box-sizing: border-box;
   text-align: center;
 
+  & > * {
+    flex-shrink: 0;
+  }
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 2px; }
+
   .hero {
+    width: 100%;
     .heroIcon { color: $accent; margin-bottom: $space-4; animation: float 3s infinite ease-in-out; }
     h2 { font-size: $text-lg; font-weight: 800; margin-bottom: $space-2; color: $text; }
     p { font-size: $text-sm; color: $text-m; margin-bottom: $space-6; }
   }
+
   .pagePreview {
     background: $bg-s;
     border: 1px solid $border;
     padding: $space-3;
     border-radius: 0.75rem;
     width: 100%;
+    max-width: 400px;
     margin-bottom: $space-6;
     display: flex;
     flex-direction: column;
@@ -80,6 +97,7 @@
     .pageTitle { font-size: $text-xs; font-weight: 700; color: $text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pageUrl { font-size: $text-xs; color: $text-d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   }
+
   .startBtn {
     background: $accent;
     color: white;
@@ -90,14 +108,21 @@
     font-size: $text-sm;
     cursor: pointer;
     box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
+    margin-bottom: $space-4;
     &:hover { filter: brightness(1.1); transform: translateY(-1px); }
   }
+
   .historyOption {
     margin-top: $space-8;
     padding: $space-4;
     background: $bg-s;
     border: 1px solid $border;
     border-radius: 0.75rem;
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     p { font-size: $text-xs; line-height: 1.6; color: $text-m; margin-bottom: $space-4; }
   }
 
@@ -107,10 +132,11 @@
     gap: $space-2;
     margin-bottom: $space-2;
     text-align: left;
+    width: 100%;
   }
 
   .historyItem {
-    background: $bg-s;
+    background: $bg-p;
     border: 1px solid $border;
     padding: $space-3;
     border-radius: 0.75rem;
@@ -120,6 +146,8 @@
     cursor: pointer;
     transition: all 0.2s;
     color: $text-m;
+    width: 100%;
+    box-sizing: border-box;
 
     &:hover {
       border-color: $accent;
@@ -133,6 +161,7 @@
       flex-direction: column;
       gap: 2px;
       overflow: hidden;
+      flex: 1;
       
       .historyTimeRow {
         display: flex;
@@ -154,19 +183,46 @@
       .historyRelative { font-size: $text-xs; font-weight: 800; color: $text; }
       .historyAbsolute { font-size: $text-xs; color: $text-d; }
       .historyTitle { font-size: $text-xs; font-weight: 500; color: $text-m; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    } // Closing .historyInfo
-  } // Closing .historyItem
-} // Closing .historyList
+    }
 
-.moreHistory { font-size: $text-xs; color: $text-d; margin-top: $space-2; }
-.features { margin-top: $space-8; display: flex; flex-direction: column; gap: $space-2; .featItem { font-size: $text-xs; color: $text-d; display: flex; align-items: center; gap: $space-1; } }
+    .historyActions {
+      display: flex;
+      align-items: center;
+      gap: $space-1;
+      flex-shrink: 0;
+      
+      .deleteBtn {
+        background: transparent;
+        border: none;
+        color: $text-d;
+        cursor: pointer;
+        padding: $space-1;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        
+        &:hover {
+          color: #ef4444; 
+          background: rgba(239, 68, 68, 0.1);
+        }
+      }
+    }
+  }
+}
 
 .workArea {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  padding-bottom: 5rem; // Space for floating toolbar
+  padding-bottom: 5rem; 
+  min-height: 0;
+
+  .isPopup & {
+    padding-bottom: $space-4;
+  }
 
   .statsSummary {
     display: flex;
@@ -217,7 +273,7 @@
     .headerRight { display: flex; align-items: center; gap: $space-3; }
     .countBadge { font-size: $text-xs; font-weight: 800; background: $bg-h; color: $text-m; padding: 2px $space-2; border-radius: $space-1; }
   }
-} // End .workArea
+}
 
 .scoreBadge {
   font-size: $text-xs; font-weight: 800; padding: 2px $space-2; border-radius: $space-1; cursor: pointer; transition: all 0.2s;
@@ -340,7 +396,7 @@
       } 
     }
   }
-} // End .miniCard
+}
 
 .fullPropPanel {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: $bg-p; z-index: 100; display: flex; flex-direction: column;
@@ -387,7 +443,7 @@
       }
     }
   }
-} // End .fullPropPanel
+}
 
 .outlineView {
   margin-top: $space-3; background: $bg-p; border-radius: 0.5rem; padding: $space-2; display: flex; flex-direction: column; gap: 2px; max-height: 200px; overflow-y: auto; border: 1px solid $border;
@@ -400,7 +456,7 @@
     &.h3 { padding-left: $space-8; }
     &.h4 { padding-left: $space-12; }
   }
-} // End .outlineView
+}
 
 .loadingBar {
   width: 200px; height: $space-1; background: $bg-h; border-radius: 2px; margin: $space-8 auto; overflow: hidden; position: relative;
@@ -408,7 +464,7 @@
     position: absolute; width: 40%; height: 100%; background: $accent; border-radius: 2px;
     animation: loadingMove 1.5s infinite ease-in-out;
   }
-} // End .loadingBar
+}
 
 .expertToolbar {
   position: absolute;
@@ -416,7 +472,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
-  background: rgba(15, 23, 42, 0.85); // Dark semi-transparent
+  background: rgba(15, 23, 42, 0.85); 
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.2); 
   padding: $space-2 $space-4;
@@ -444,7 +500,7 @@
     color: $text-d;
     font-size: $text-xs;
     font-weight: 600;
-    padding: $space-1 $space-3; // 4px 12px
+    padding: $space-1 $space-3;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
@@ -464,4 +520,3 @@
 
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 @keyframes loadingMove { 0% { left: -40%; } 100% { left: 100%; } }
-

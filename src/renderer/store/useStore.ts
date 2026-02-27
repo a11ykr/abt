@@ -115,6 +115,7 @@ interface ABTStore {
   setItems: (items: ABTItem[]) => void;
   updateItemStatus: (id: string, status: string, comment?: string) => void;
   removeSession: (url: string) => void;
+  removeSessionById: (scanId: number) => void;
   clearItems: () => void;
   setProjectName: (name: string) => void;
   setGuidelineScore: (scanId: number, gid: string, score: number) => void;
@@ -200,9 +201,12 @@ export const useStore = create<ABTStore>()(
       removeSession: (url) => set((state) => ({
         items: state.items.filter((item) => item.pageInfo?.url !== url)
       })),
+
+      removeSessionById: (scanId) => set((state) => ({
+        items: state.items.filter((item) => item.pageInfo?.scanId !== scanId)
+      })),
       
       clearItems: () => set({ items: [] }),
-      
       setProjectName: (projectName) => set({ projectName }),
       
       setGuidelineScore: (scanId, gid, score) => set((state) => ({
