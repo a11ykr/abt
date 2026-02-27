@@ -31,10 +31,13 @@ class ABTConnector {
    */
   send(data) {
     try {
-      chrome.runtime.sendMessage({
+      // 이미 type이 정의된 제어 메시지(SCAN_FINISHED 등)는 그대로 전송,
+      // 일반 데이터는 기존처럼 UPDATE_ABT_LIST로 래핑하여 전송합니다.
+      const message = (data && data.type) ? data : {
         type: 'UPDATE_ABT_LIST',
         data: data
-      });
+      };
+      chrome.runtime.sendMessage(message);
       return true;
     } catch (e) {
       console.error("ABT: Failed to send message to extension", e);
