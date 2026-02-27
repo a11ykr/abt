@@ -1,7 +1,17 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Shield, Info, Search, Edit3, Clock, ChevronRight, ChevronDown, ChevronLeft, Filter, FileText, CheckCircle2, AlertCircle, Trash2, Folder, FolderOpen, FileCode2, RotateCcw, X, Image as ImageIcon, PlusCircle, ExternalLink, PanelRightClose } from 'lucide-react';
+import { Shield, Info, Search, Edit3, Clock, ChevronRight, ChevronDown, ChevronLeft, Filter, FileText, CheckCircle2, AlertCircle, Trash2, Folder, FolderOpen, FileCode2, RotateCcw, X, Image as ImageIcon, PlusCircle, ExternalLink, PanelRightClose, LayoutList } from 'lucide-react';
 import styles from './styles/App.module.scss';
 import { useStore, kwcagHierarchy, ABTItem } from './store/useStore';
+import rawStandards from '../engine/kwcag-standards.json';
+
+// Vite 번들링 결과물(default 래핑)을 안정적으로 파싱하는 글로벌 함수
+const getStandardItems = () => {
+  if (!rawStandards) return null;
+  if ('items' in rawStandards) return (rawStandards as any).items;
+  if ('default' in rawStandards && (rawStandards as any).default.items) return (rawStandards as any).default.items;
+  return null;
+};
+const standardItemsDict = getStandardItems();
 
 const guidelineNames: Record<string, string> = {
   "ALL": "전체 지침"
@@ -47,6 +57,34 @@ const App = () => {
   const [lastTriggeredScanTime, setLastTriggeredScanTime] = useState<number>(0);
   const [isAuditing, setIsAuditing] = useState(false);
   const [currentGuideline, setCurrentGuideline] = useState<string | null>(null);
+  // 전문가 도구 상태
+  const [selectedGuidelineInfo, setSelectedGuidelineInfo] = useState<string | null>(null);
+  const [isLinearView, setIsLinearView] = useState(false);
+  const [isImageAltView, setIsImageAltView] = useState(false);
+
+  const toggleCSS = () => {
+    const nextState = !isLinearView;
+    setIsLinearView(nextState);
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.sendMessage({ 
+        type: 'TOGGLE_CSS', 
+        enable: nextState,
+        windowId: isPopup ? sourceWindowId : null
+      });
+    }
+  };
+
+  const toggleImageAlt = () => {
+    const nextState = !isImageAltView;
+    setIsImageAltView(nextState);
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.sendMessage({ 
+        type: 'TOGGLE_IMAGE_ALT', 
+        enable: nextState,
+        windowId: isPopup ? sourceWindowId : null
+      });
+    }
+  };
   
   const isPopup = useMemo(() => new URLSearchParams(window.location.search).get('mode') === 'popup', []);
   const sourceWindowId = useMemo(() => {
@@ -395,13 +433,15 @@ const App = () => {
 
   const selectedItem = items.find(i => i.id === selectedId);
 
+  const guidelineData = selectedGuidelineInfo && standardItemsDict ? standardItemsDict[selectedGuidelineInfo] : null;
+
   return (
     <div className={styles.container}>
       <header className={styles.extHeader}>
         <div className={styles.brand}>
           <Shield size={18} className={styles.logo} />
           <div className={styles.titleInfo}>
-            <h1>AAK Auditor</h1>
+            <h1>AAK Workbench</h1>
             <span>{isPopup ? 'Window' : 'Extension'}</span>
           </div>
         </div>
@@ -637,6 +677,14 @@ const App = () => {
                         );
                       })()}
                       <span className={styles.countBadge}>{group.items.length}</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedGuidelineInfo(group.gid); }} 
+                        className={styles.iconBtn}
+                        title="지침 판정 기준 보기"
+                        style={{ padding: '0.2rem' }}
+                      >
+                        <Info size={14} />
+                      </button>
                     </div>
                           </header>
                           
@@ -735,6 +783,46 @@ const App = () => {
         </div>
       )}
 
+      {selectedGuidelineInfo && guidelineData && (
+        <div className={styles.fullPropPanel}>
+          <header>
+            <h3>{selectedGuidelineInfo} {guidelineData.name || '지침 정보'}</h3>
+            <button onClick={() => setSelectedGuidelineInfo(null)}><X size={18} /></button>
+          </header>
+          <div className={styles.propBody}>
+            <section className={styles.guidelineSection}>
+              <h4>준수 기준</h4>
+              <p>{guidelineData.compliance_criteria || guidelineData.criteria || '내용 없음'}</p>
+            </section>
+            
+            {guidelineData.error_types && typeof guidelineData.error_types === 'object' && (
+              <section className={styles.guidelineSection}>
+                <h4>오류 유형</h4>
+                <ul className={styles.errorTypeList}>
+                  {Object.entries(guidelineData.error_types).map(([code, desc]) => (
+                    <li key={code}>
+                      <strong>{code}</strong>
+                      <span>{String(desc)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {Array.isArray(guidelineData.detailed_descriptions) && guidelineData.detailed_descriptions.length > 0 && (
+              <section className={styles.guidelineSection}>
+                <h4>세부 설명</h4>
+                <ul className={styles.detailList}>
+                  {guidelineData.detailed_descriptions.map((desc: string, i: number) => (
+                    <li key={i}>{desc}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
+        </div>
+      )}
+
       {isPropPanelOpen && selectedItem && (
         <div className={styles.fullPropPanel}>
           <header>
@@ -763,6 +851,32 @@ const App = () => {
           </div>
         </div>
       )}
+      {/* 하단 플로팅 전문가 도구바 (Expert Tools) */}
+      {selectedSessionId && !isAuditing && (
+        <div className={styles.expertToolbar}>
+          <div className={styles.toolbarInner}>
+            <div className={styles.toolGroup}>
+              <button 
+                onClick={toggleImageAlt} 
+                title={isImageAltView ? "이미지 원본 보기" : "이미지 숨기고 대체 텍스트(alt) 보기"} 
+                className={`${styles.toolBtn} ${isImageAltView ? styles.active : ''}`}
+              >
+                <ImageIcon size={14} />
+                <span>{isImageAltView ? "원본 뷰" : "대체 텍스트(Alt) 뷰"}</span>
+              </button>
+              <button 
+                onClick={toggleCSS} 
+                title={isLinearView ? "CSS 켜기 (Restore Layout)" : "CSS 끄기 (Linearize Layout)"} 
+                className={`${styles.toolBtn} ${isLinearView ? styles.active : ''}`}
+              >
+                <LayoutList size={14} />
+                <span>{isLinearView ? "CSS 켜기" : "선형화(CSS 끄기)"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -40,10 +40,17 @@
   border: none;
   color: $text-d;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.25rem 0.5rem; // Horizontal padding for label
   border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 10px;
+  font-weight: 700;
+  transition: all 0.2s;
   &:hover { color: $text; background: $bg-h; }
   &.success { color: $pass; }
+  &.active { color: $accent; background: $bg-h; }
 }
 
 .dashboard {
@@ -345,6 +352,46 @@
   header { padding: 1rem; border-bottom: 1px solid $border; display: flex; justify-content: space-between; align-items: center; h3 { font-size: 0.9rem; margin: 0; color: $text; } button { background: transparent; border: none; color: $text-d; cursor: pointer; } }
   .propBody { padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; section { h4 { font-size: 10px; font-weight: 800; color: $text-d; text-transform: uppercase; margin-bottom: 0.5rem; } code { background: $bg-s; padding: 0.5rem; border-radius: 4px; display: block; font-size: 11px; color: $accent; } p { font-size: 12px; line-height: 1.6; color: $text; } } }
   .histItem { margin-bottom: 1rem; padding: 0.5rem; background: $bg-s; border-radius: 4px; span { font-size: 9px; color: $text-d; } strong { display: block; font-size: 11px; color: $text-m; margin: 2px 0; } p { font-size: 11px; margin: 0; } }
+  .guidelineSection {
+    p { font-size: 13px; line-height: 1.6; color: $text; }
+    
+    .errorTypeList, .detailList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+
+      li {
+        font-size: 12px;
+        line-height: 1.6;
+        color: $text-m;
+        background: $bg-s;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid $border;
+      }
+    }
+
+    .errorTypeList li {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      strong { color: $fail; font-family: monospace; font-size: 13px; }
+    }
+
+    .detailList li {
+      position: relative;
+      padding-left: 1.5rem;
+      &::before {
+        content: "•";
+        position: absolute;
+        left: 0.5rem;
+        color: $accent;
+      }
+    }
+  }
 }
 
 .outlineView {
@@ -367,6 +414,58 @@
   .progress {
     position: absolute; width: 40%; height: 100%; background: $accent; border-radius: 2px;
     animation: loadingMove 1.5s infinite ease-in-out;
+  }
+}
+
+.expertToolbar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.85); // Dark semi-transparent
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2); // 테두리를 더 밝고 선명하게
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(0, 0, 0, 0.4); // 이중 섀도우로 깊이감과 식별력 강화
+  transition: transform 0.3s ease, opacity 0.3s ease;
+
+  .toolbarInner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .toolGroup {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .toolBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: transparent;
+    border: none;
+    color: $text-d;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: $text;
+    }
+
+    &.active {
+      background: rgba(56, 189, 248, 0.2);
+      color: $accent;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
   }
 }
 

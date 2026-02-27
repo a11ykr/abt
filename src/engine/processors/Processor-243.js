@@ -35,17 +35,36 @@ class Processor243 {
       
       const accessibleName = (text || ariaLabel || title || alt || "").trim();
 
+      const describedByIds = el.getAttribute('aria-describedby');
+      let descriptionText = "";
+
+      if (describedByIds) {
+        const ids = describedByIds.split(/\s+/);
+        ids.forEach(id => {
+          const target = document.getElementById(id);
+          if (target && target.innerText) {
+            descriptionText += target.innerText.trim() + " ";
+          }
+        });
+        descriptionText = descriptionText.trim();
+      }
+
       if (!accessibleName) {
         reports.push(this.createReport(el, "오류", "링크의 목적을 알 수 있는 텍스트(이름)가 제공되지 않았습니다."));
       } else if (this.vagueWords.includes(accessibleName.toLowerCase())) {
-        reports.push(this.createReport(el, "부적절", `링크 텍스트('${accessibleName}')가 너무 모호하여 맥락 없이는 목적을 파악하기 어렵습니다.`));
+        if (descriptionText) {
+          const report = this.createReport(el, "검토 필요", `링크 이름('${accessibleName}')은 모호하지만, aria-describedby를 통해 보조 설명이 제공되었습니다. 스크린리더의 '링크 목록' 탐색 시 의미가 전달되는지 검토가 필요합니다.`);
+          report.context.smartContext += `\n[참조 설명(aria-describedby)]: "${descriptionText}"`;
+          reports.push(report);
+        } else {
+          reports.push(this.createReport(el, "부적절", `링크 텍스트('${accessibleName}')가 너무 모호하여 목적을 파악하기 어렵습니다.`));
+        }
       } else if (/^https?:\/\//i.test(accessibleName)) {
         reports.push(this.createReport(el, "수정 권고", "링크 텍스트로 기계적인 URL이 노출되고 있습니다. 서술적인 문구로 대체를 권장합니다."));
       } else {
         reports.push(this.createReport(el, "적절", "적절한 링크 텍스트가 제공되었습니다."));
       }
     }
-
     return reports;
   }
 

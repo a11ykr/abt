@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "A11Y Assistant for KWCAG",
-  "short_name": "AAK",
+  "name": "AAK Workbench (KWCAG)",
+  "short_name": "AAK Workbench",
   "version": "1.0.0",
   "permissions": [
     "sidePanel",
@@ -11,7 +11,7 @@
     "tabs"
   ],
   "action": {
-    "default_title": "Open AAK Dashboard"
+    "default_title": "Open AAK Workbench"
   },
   "side_panel": {
     "default_path": "sidepanel.html"

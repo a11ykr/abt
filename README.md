@@ -1,4 +1,4 @@
-# A11Y Assistant for KWCAG (AAK)
+# AAK (A11Y Assistant for KWCAG) Workbench
 
 > 🛡️ **웹 접근성 전문가를 위한 정밀 진단 어시스턴트**
 > 브라우저 사이드 패널(Side Panel)을 통해 실시간 접근성 진단 및 전문가 판정 프로세스를 통합합니다.

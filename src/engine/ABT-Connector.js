@@ -17,6 +17,12 @@ class ABTConnector {
           console.log("ABT: Audit triggered via Extension UI");
           window.ABTQuickScan();
           sendResponse({ status: 'started' });
+        } else if (message.type === 'TOGGLE_CSS' && window.ABTCore) {
+          window.ABTCore.toggleLinearView(message.enable);
+          sendResponse({ status: 'success', isLinear: message.enable });
+        } else if (message.type === 'TOGGLE_IMAGE_ALT' && window.ABTCore) {
+          window.ABTCore.toggleImageAltView(message.enable);
+          sendResponse({ status: 'success', isImageAlt: message.enable });
         }
       } catch (e) {
         console.warn("ABT: Failed to handle message from extension", e);

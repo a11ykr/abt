@@ -28,7 +28,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } 
 
   // Relay commands from UI to Engine
-  else if (message.type === 'locate-element' || message.type === 'RUN_AUDIT') {
+  else if (message.type === 'locate-element' || message.type === 'RUN_AUDIT' || message.type === 'TOGGLE_CSS' || message.type === 'TOGGLE_IMAGE_ALT') {
     const targetWinId = message.windowId;
     
     const findAndSend = (queryOptions) => {

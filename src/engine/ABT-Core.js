@@ -244,6 +244,100 @@ class ABTCore {
       console.error("ABT: Spotlight Error", e);
     }
   }
+  /**
+   * 이미지를 숨기고 대체 텍스트(alt)를 그 자리에 오버레이하여 시각적으로 표시합니다. (1.1.1 지침 검수용)
+   * @param {boolean} enable - true면 이미지 끄기 및 alt 텍스트 표시, false면 복구
+   */
+  toggleImageAltView(enable) {
+    try {
+      const OVERLAY_CLASS = 'abt-alt-overlay-element';
+      
+      if (enable) {
+        // 1. 기존 오버레이가 있다면 제거 (중복 방지)
+        document.querySelectorAll(`.${OVERLAY_CLASS}`).forEach(el => el.remove());
+        
+        // 2. 모든 이미지 관련 요소 수집
+        const imgElements = document.querySelectorAll('img, [role="img"], svg');
+        
+        imgElements.forEach(img => {
+          // 이미지 원본 투명처리
+          if (!img.dataset.originalOpacity) {
+            img.dataset.originalOpacity = img.style.opacity || '1';
+          }
+          img.style.opacity = '0.1'; // 완전히 가리지 않고 형태만 어렴풋이 남김
+          img.style.filter = 'grayscale(100%)';
+          
+          // 대체 텍스트 추출
+          let altText = img.getAttribute('alt') || img.getAttribute('aria-label') || img.getAttribute('title') || '';
+          if (img.tagName.toLowerCase() === 'svg') {
+            const titleEl = img.querySelector('title');
+            if (titleEl) altText = titleEl.textContent;
+          }
+
+          // 오버레이 생성
+          const overlay = document.createElement('div');
+          overlay.className = OVERLAY_CLASS;
+          overlay.textContent = altText ? `[ALT: ${altText}]` : `[ALT 없음]`;
+          
+          // 스타일링
+          Object.assign(overlay.style, {
+            position: 'absolute',
+            backgroundColor: altText ? 'rgba(22, 163, 74, 0.9)' : 'rgba(220, 38, 38, 0.9)', // 녹색(있음) vs 빨간색(없음)
+            color: 'white',
+            padding: '4px 8px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            borderRadius: '4px',
+            zIndex: '2147483646',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '100%',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          });
+
+          // 위치 지정 (이미지 바로 위에)
+          const rect = img.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            overlay.style.top = `${rect.top + window.scrollY}px`;
+            overlay.style.left = `${rect.left + window.scrollX}px`;
+            document.body.appendChild(overlay);
+          }
+        });
+      } else {
+        // 복구 모드
+        document.querySelectorAll(`.${OVERLAY_CLASS}`).forEach(el => el.remove());
+        document.querySelectorAll('img, [role="img"], svg').forEach(img => {
+          if (img.dataset.originalOpacity !== undefined) {
+            img.style.opacity = img.dataset.originalOpacity;
+            img.style.filter = '';
+            delete img.dataset.originalOpacity;
+          }
+        });
+      }
+      console.log(`ABT: Image Alt View ${enable ? 'Enabled' : 'Disabled'}`);
+    } catch (e) {
+      console.error("ABT: Failed to toggle image alt view", e);
+    }
+  }
+
+  /**
+   * 모든 CSS 스타일시트를 비활성화하거나 활성화하여 선형 구조를 확인합니다. (1.3.2 지침 검수용)
+   * @param {boolean} enable - true면 선형화(CSS 끔), false면 복구(CSS 켬)
+   */
+  toggleLinearView(enable) {
+    try {
+      Array.from(document.styleSheets).forEach(ss => {
+        try {
+          ss.disabled = !!enable;
+        } catch (e) {}
+      });
+      console.log(`ABT: Linear View ${enable ? 'Enabled' : 'Disabled'}`);
+    } catch (e) {
+      console.error("ABT: Failed to toggle linear view", e);
+    }
+  }
 }
 
 // Global Singleton
