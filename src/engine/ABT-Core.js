@@ -6,6 +6,21 @@ class ABTCore {
   constructor() {
     this.processors = new Map();
     this.connector = window.ABTConnector;
+    this.standards = null;
+  }
+
+  /**
+   * 진단 기준 데이터를 로드합니다.
+   */
+  async loadStandards() {
+    try {
+      // 확장 프로그램 내 리소스 경로에서 로드 (Vite/Manifest 환경 고려)
+      const response = await fetch(chrome.runtime.getURL('src/engine/kwcag-standards.json'));
+      this.standards = await response.json();
+      console.log("ABT: KWCAG Standards loaded.", this.standards.version);
+    } catch (error) {
+      console.error("ABT: Failed to load standards JSON. Falling back to basic info.", error);
+    }
   }
 
   /**
@@ -58,6 +73,33 @@ class ABTCore {
             .map(report => {
               report.guideline_id = id;
               report.pageInfo = { ...pageInfo };
+              
+              // [매핑 로직 추가] 표준 데이터 결합
+              if (this.standards && this.standards.items[id]) {
+                const item = this.standards.items[id];
+                report.guideline_info = {
+                  name: item.name,
+                  principle: this.standards.principles ? this.standards.principles[item.principle_id] : item.principle_id,
+                  compliance_criteria: item.compliance_criteria,
+                  detailed_descriptions: item.detailed_descriptions
+                };
+
+                // 오류 코드 매핑 (예: Rule 1.1 -> 1-1)
+                if (report.result.rules && report.result.rules.length > 0) {
+                  report.result.detailed_errors = report.result.rules.map(rule => {
+                    const match = rule.match(/Rule\s+(\d+\.\d+)/i);
+                    if (match) {
+                      const errorCode = match[1].replace('.', '-');
+                      return {
+                        code: errorCode,
+                        description: item.error_types[errorCode] || "상세 설명 없음"
+                      };
+                    }
+                    return { code: rule, description: "규칙 설명 없음" };
+                  });
+                }
+              }
+
               return report;
             });
           
@@ -70,7 +112,6 @@ class ABTCore {
         console.error(`ABT: Error in Processor [${id}]:`, error);
       }
     }
-
     // 모든 지침 진단 완료 신호 전송
     this.connector.send({
       type: 'SCAN_FINISHED',
@@ -209,4 +250,9 @@ class ABTCore {
 window.ABTCore = new ABTCore();
 
 // 기존 QuickScan 함수를 Core 기반으로 업데이트
-window.ABTQuickScan = () => window.ABTCore.runFullAudit();
+window.ABTQuickScan = async () => {
+  if (!window.ABTCore.standards) {
+    await window.ABTCore.loadStandards();
+  }
+  return window.ABTCore.runFullAudit();
+};
